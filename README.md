@@ -1,19 +1,28 @@
-# enclose.horse solver
+# enclose.horse Solver
 
-A static Java-to-WebAssembly solver for [enclose.horse](https://enclose.horse/).
+This project is a standalone, static solver companion for [enclose.horse](https://enclose.horse/). It brings the puzzle-solving experience into a lightweight GitHub Pages site while keeping the solver itself in the browser.
 
-## Use
+## Highlights
 
-Open the GitHub Pages site, drag **Solve this enclose.horse puzzle** to the bookmarks bar, then open any `enclose.horse/play/...` puzzle and activate the bookmark. The bookmarklet reads the main puzzle from the current page, requests bonus data using the main puzzle ID, and opens the solver with both puzzles.
+- Java solver compiled to WebAssembly with TeaVM’s WebAssembly GC backend.
+- Exact optimal-score constraints when a level provides its known optimum.
+- Up to 10 optimal solutions with previous/next navigation and a `10+` indicator when more are available.
+- Correct handling of grass, water, walls, creatures, collectible tiles, and linked portals.
+- Solution rendering that highlights walls and enclosed non-water cells.
+- Separate visual treatment for bonus rounds, including formatted bonus types.
+- Web Worker execution so long-running solves do not block the page interface.
+- Bookmarklet integration that reads the active `enclose.horse` puzzle and retrieves bonus data using the main puzzle ID.
 
-All solving happens locally in `solver.wasm`. The page does not need a backend or a CORS proxy.
+## Project structure
 
-## Publish
+The site is intentionally backend-free. `index.html` provides the interface, `app.js` coordinates the bookmarklet and presentation, `solver-worker.js` runs the WebAssembly solver off the main thread, and `solver.wasm` contains the compiled Java solver. `solver.wasm-runtime.js` is the TeaVM runtime required to load the module.
 
-Create a repository under [tristan852](https://github.com/tristan852/)—for example, `enclose-horse-solver`—and publish the contents of this folder to its `main` branch. The included GitHub Actions workflow deploys the repository root to GitHub Pages automatically.
+The site is deployable as-is to any static host, including GitHub Pages. The included workflow publishes the repository root whenever the `main` branch changes.
 
-If GitHub asks for a Pages source, choose **GitHub Actions**. After the first successful workflow run, the site will be available at:
+## Puzzle display
 
-`https://tristan852.github.io/enclose-horse-solver/`
+Map dimensions scale to the available screen while preserving cell and grid-gap proportions. Water is rendered with restrained decoration (`🌊` and occasional `⛵`), while each portal uses `🌀`; portal colors are derived from their ASCII symbols so matching portals remain visually identifiable.
 
-The WASM runtime requires HTTP(S); do not open `index.html` directly from the local filesystem.
+## License
+
+This repository contains the enclose.horse solver website and its browser-targeted solver implementation.
