@@ -1,14 +1,10 @@
 # enclose.horse Solver
 
-A standalone browser-based solver for [enclose.horse](https://enclose.horse/), packaged as a static website for GitHub Pages.
+The enclose.horse Solver is a standalone browser solver for [enclose.horse](https://enclose.horse/). It runs locally in the browser and supports the main puzzles and all bonus puzzle types.
 
-It runs a Java solver locally in the browser through WebAssembly. The solver translates each enclose.horse puzzle into an integer linear programming (ILP) problem and solves it with an ILP solver. No puzzle data or solving work needs to be sent to a backend service.
+The site translates an enclose.horse puzzle into an integer linear programming (ILP) model and solves it with Google OR-Tools compiled to WebAssembly through [`or-tools-wasm`](https://github.com/Axelwickm/or-tools-wasm). Puzzle data and solving stay in the browser; no solver backend is required.
 
-All enclose.horse bonus puzzle types are supported, including Lovebirds, Lovers Quarrel, and Costly Walls.
-
-The repository is designed to be served directly by GitHub Pages or another static host. Its GitHub Actions workflow publishes the site automatically when the `main` branch is updated.
-
-Puzzle data is taken from the raw level payload supplied by enclose.horse. Solution wall characters are not used as puzzle input; walls are selected by the solver.
+The static files in this repository can be served directly by GitHub Pages. The included GitHub Actions workflow publishes the repository contents whenever `main` is updated.
 
 ## License
 
