@@ -1935,7 +1935,7 @@ async function initiallySolvePuzzle(puzzle, view) {
   solutions.push(solution);
   renderSolution(view.card, solution);
   
-  for (let i = 0; i < 9; i++) {
+  for(let i = 0; i < 9; i++) {
     
     setWorking(
       view.status,
@@ -1998,6 +1998,27 @@ async function initiallySolvePuzzle(puzzle, view) {
       
         puzzleSolver.blacklistSolution(solution);
         solutions.push(solution);
+        
+        renderSolution(view.card, solution);
+        
+        for(let i = 0; i < 9; i++) {
+          
+          setWorking(
+            view.status,
+            "finding next optimal solution…"
+          );
+          
+          solution = await puzzleSolver.solve(optimalScore);
+          if(!solution) {
+            
+            exhausted = true;
+            break;
+          }
+          
+          puzzleSolver.blacklistSolution(solution);
+          solutions.push(solution);
+        }
+        
         update();
         
       } else {
