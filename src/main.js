@@ -433,8 +433,6 @@ class PuzzleSolver {
       SOLVE_TIME_SECONDS * 1000
     );
 
-    this.model.set_num_threads(1);
-
     this.wall = makeGrid(
       puzzle.width,
       puzzle.height
