@@ -1832,7 +1832,7 @@ function createPuzzleCard(puzzle) {
     <div class="score">
       Optimal score
       <strong>…</strong>
-      <small>solving…</small>
+      <small>waiting for main round to be solved…</small>
     </div>
 
     <div class="controls">
