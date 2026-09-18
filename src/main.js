@@ -1797,6 +1797,8 @@ function setWorking(status, message) {
 }
 
 function createPuzzleCard(puzzle) {
+  console.log(puzzle)
+
   const rows = puzzle.map.trim().replace(/\r/g, "").split("\n");
   const height = rows.length;
   const width = rows[0].length;
