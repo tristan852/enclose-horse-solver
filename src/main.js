@@ -1888,7 +1888,7 @@ function createPuzzleCard(puzzle) {
   };
 }
 
-async function showPuzzle(puzzle) {
+function showPuzzle(puzzle) {
   const view = createPuzzleCard(puzzle.level);
 
   results.append(view.card);
@@ -1898,11 +1898,13 @@ async function showPuzzle(puzzle) {
     () => resizeBoard(view.card, view.width, view.height),
     { passive: true }
   );
+}
 
+async function initiallySolvePuzzle(puzzle) {
   let currentSolution = null;
   let solutionNumber = 0;
   let exhausted = false;
-  
+
   const puzzleSolver =
     new PuzzleSolver(
       puzzle
@@ -1914,7 +1916,6 @@ async function showPuzzle(puzzle) {
   );
   
   currentSolution = await puzzleSolver.solve();
-
 
   console.log(
     "Solution:",
@@ -2096,13 +2097,12 @@ async function main() {
   
   results.hidden = false;
   
-  // first show both puzzles
-  
-  // then solve them sequentially
+  showPuzzle(puzzle);
+  showPuzzle(bonusPuzzle);
   
   try {
-    await showPuzzle(puzzle);
-    await showPuzzle(bonusPuzzle);
+    await initiallySolvePuzzle(puzzle);
+    await initiallySolvePuzzle(bonusPuzzle);
   } catch (error) {
     results.hidden = false;
     results.innerHTML =
