@@ -1716,7 +1716,8 @@ function resizeBoard(card, width, height) {
 }
 
 function renderSolution(card, solution) {
-  console.log("render solution: " + solution)
+  console.log("render solution: ")
+  console.log(solution)
 
   const board = card.querySelector(".board");
   const walls = new Set(solution.walls || []);
