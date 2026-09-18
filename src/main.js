@@ -1682,31 +1682,6 @@ function logPuzzle(puzzle) {
 
 // RENDERING
 
-const puzzle = {
-  id: "demo-1",
-  name: "Enclose.horse level",
-  budget: 5,
-  map: `
-H..#..U
-.......
-..C....
-....G..
-..S....
-`
-};
-
-const bonusPuzzle = {
-  id: "bonus-1",
-  type: "lovebirds",
-  budget: 4,
-  map: `
-H..A..U
-.......
-..#....
-.......
-`
-};
-
 // Pretend solver.
 // Returns one solution at a time, then null when exhausted.
 const solutions = new Map();
@@ -1797,8 +1772,6 @@ function setWorking(status, message) {
 }
 
 function createPuzzleCard(puzzle) {
-  console.log(puzzle)
-
   const rows = puzzle.map.trim().replace(/\r/g, "").split("\n");
   const height = rows.length;
   const width = rows[0].length;
@@ -2125,6 +2098,31 @@ async function main() {
   );
   
   // RENDERING:
+  
+  const puzzle = {
+    id: "demo-1",
+    name: "Enclose.horse level",
+    budget: 5,
+    map: `
+  H..#..U
+  .......
+  ..C....
+  ....G..
+  ..S....
+  `
+  };
+  
+  const bonusPuzzle = {
+    id: "bonus-1",
+    type: "lovebirds",
+    budget: 4,
+    map: `
+  H..A..U
+  .......
+  ..#....
+  .......
+  `
+  };
   
   if (install) install.hidden = true;
   
