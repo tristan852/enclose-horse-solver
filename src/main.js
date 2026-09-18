@@ -1716,16 +1716,17 @@ function resizeBoard(card, width, height) {
 }
 
 function renderSolution(card, solution) {
-  console.log("render solution: ")
-  console.log(solution)
-
   const board = card.querySelector(".board");
-  const walls = new Set(solution.walls || []);
-  const enclosed = new Set(solution.enclosed || []);
+  
+  const a1 = solution.walls || [];
+  const a2 = solution.enclosed || [];
+  
+  const walls = new Set(a1.flat());
+  const enclosed = new Set(a2.flat());
+
+  console.log(walls);
 
   [...board.children].forEach((cell, index) => {
-    
-    console.log(index, cell, walls.has(index))
     
     cell.classList.toggle("wall", walls.has(index));
     cell.classList.toggle("solution", walls.has(index));
