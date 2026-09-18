@@ -1993,7 +1993,7 @@ async function initiallySolvePuzzle(puzzle, view) {
         "finding next optimal solution…"
       );
       
-      const solution = await puzzleSolver.solve(optimalScore);
+      let solution = await puzzleSolver.solve(optimalScore);
       if(solution) {
       
         puzzleSolver.blacklistSolution(solution);
