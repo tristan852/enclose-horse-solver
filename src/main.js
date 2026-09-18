@@ -1682,34 +1682,6 @@ function logPuzzle(puzzle) {
 
 // RENDERING
 
-// Pretend solver.
-// Returns one solution at a time, then null when exhausted.
-const solutions = new Map();
-
-function solve(puzzle) {
-  const index = solutions.get(puzzle.id) || 0;
-
-  const fakeSolutions = [
-    {
-      score: 12,
-      walls: [3, 10, 17, 24, 31],
-      enclosed: [4, 5, 11, 12]
-    },
-    {
-      score: 13,
-      walls: [3, 10, 17, 25],
-      enclosed: [4, 5, 11, 12, 18]
-    }
-  ];
-
-  const solution = fakeSolutions[index];
-
-  if (!solution) return null;
-
-  solutions.set(puzzle.id, index + 1);
-  return solution;
-}
-
 const results = document.getElementById("results");
 const install = document.getElementById("install");
 
@@ -1901,6 +1873,34 @@ async function showPuzzle(puzzle) {
   let currentSolution = null;
   let solutionNumber = 0;
   let exhausted = false;
+  
+  
+  const puzzleSolver =
+    new PuzzleSolver(
+      puzzle
+    );
+
+  const solution =
+    await puzzleSolver.solve();
+
+  if (!solution) {
+    console.log(
+      "No feasible solution found."
+    );
+    return;
+  }
+
+  console.log(
+    "Solution:",
+    solution
+  );
+
+  console.table(
+    formatBoard(
+      puzzle,
+      solution
+    )
+  );
 
   setWorking(
     view.status,
@@ -1987,10 +1987,10 @@ async function main() {
   }
   
   /*
-     * The current or-tools-wasm MPSolver API requires
-     * initialization before creating the solver.
-     */
-    await initMPSolver();
+   * The current or-tools-wasm MPSolver API requires
+   * initialization before creating the solver.
+   */
+  await initMPSolver();
 
   let level;
   let bonus = null;
@@ -2046,9 +2046,8 @@ async function main() {
       true
     );
 
-  logPuzzle(
-    puzzle
-  );
+  logPuzzle(puzzle)
+  logPuzzle(bonusPuzzle);
 
   /*
    * Verify SCIP is actually linked into the WASM build.
@@ -2069,33 +2068,6 @@ async function main() {
    * availability. Release it immediately.
    */
   probe.delete();
-
-  const puzzleSolver =
-    new PuzzleSolver(
-      puzzle
-    );
-
-  const solution =
-    await puzzleSolver.solve();
-
-  if (!solution) {
-    console.log(
-      "No feasible solution found."
-    );
-    return;
-  }
-
-  console.log(
-    "Solution:",
-    solution
-  );
-
-  console.table(
-    formatBoard(
-      puzzle,
-      solution
-    )
-  );
   
   // RENDERING:
   
