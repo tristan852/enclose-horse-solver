@@ -1917,7 +1917,7 @@ async function initiallySolvePuzzle(puzzle, view) {
     "finding the first optimal solution…"
   );
   
-  solution = await puzzleSolver.solve();
+  let solution = await puzzleSolver.solve();
 
   if (!solution) {
     view.status.querySelector("small").textContent =
@@ -1985,7 +1985,7 @@ async function initiallySolvePuzzle(puzzle, view) {
         "finding next optimal solution…"
       );
       
-      solution = await puzzleSolver.solve();
+      const solution = await puzzleSolver.solve();
       if(solution) {
       
         solutions.push(solution);
