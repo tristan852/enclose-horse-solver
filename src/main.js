@@ -1475,6 +1475,13 @@ class PuzzleSolver {
         puzzle.height,
         false
       );
+    
+    const canReach =
+      makeGrid(
+        puzzle.width,
+        puzzle.height,
+        false
+      );
 
     let wallCount = 0;
     let score = 0;
@@ -1518,6 +1525,30 @@ class PuzzleSolver {
                 y
               )
             );
+        }
+      }
+    }
+    
+    for (
+      let x = 0;
+      x < puzzle.width;
+      x++
+    ) {
+      for (
+        let y = 0;
+        y < puzzle.height;
+        y++
+      ) {
+        if(isEnclosed[x][y]) {
+          canReach[x][y] = true;
+          
+          for (const [dx, dy] of DIRECTIONS) {
+            const x2 = x + dx;
+            const y2 = y + dy;
+            if(x2 < 0 || y2 < 0 || x2 >= puzzle.width || y2 >= puzzle.height) continue;
+            
+            if(isWall[x2][y2]) canReach[x2][y2] = true;
+          }
         }
       }
     }
@@ -1569,17 +1600,8 @@ class PuzzleSolver {
           .Value()
       );
 
-    this.optimalScoreConstraint.SetLb(
-      roundedObjective
-    );
-
-    if (
-      status === MPSolver.OPTIMAL
-    ) {
-      this.optimalScoreConstraint.SetUb(
-        roundedObjective
-      );
-    }
+    this.optimalScoreConstraint.SetLb(roundedObjective);
+    this.optimalScoreConstraint.SetUb(roundedObjective);
 
     return {
       puzzle,
