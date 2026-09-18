@@ -1609,6 +1609,7 @@ class PuzzleSolver {
       objectiveValue,
       isWall,
       isEnclosed,
+      canReach,
       wallsUsed: wallCount,
       status: statusName,
     };
@@ -1725,9 +1726,11 @@ function renderSolution(card, solution) {
   
   const a1 = interleaveArrays(solution.isWall || []);
   const a2 = interleaveArrays(solution.isEnclosed || []);
+  const a3 = interleaveArrays(solution.canReach || []);
   
   const walls = new Set();
   const enclosed = new Set();
+  const reachableCells = new Set();
   
   a1.forEach((value, index) => {
     if (value) {
@@ -1740,11 +1743,17 @@ function renderSolution(card, solution) {
       enclosed.add(index);
     }
   });
+  
+  a3.forEach((value, index) => {
+    if (value) {
+      reachableCells.add(index);
+    }
+  });
 
   [...board.children].forEach((cell, index) => {
     
     cell.classList.toggle("wall", walls.has(index));
-    cell.classList.toggle("solution", walls.has(index));
+    cell.classList.toggle("solution", walls.has(index) && reachableCells.has(index));
     cell.classList.toggle(
       "enclosed",
       enclosed.has(index) && !walls.has(index)
