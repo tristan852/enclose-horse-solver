@@ -1917,7 +1917,7 @@ async function initiallySolvePuzzle(puzzle, view) {
 
   setWorking(
     view.status,
-    "finding the first optimal solution…"
+    "finding optimal solution…"
   );
   
   let optimalScore = puzzle.optimalScore ? puzzle.optimalScore : MIN_SCORE;
