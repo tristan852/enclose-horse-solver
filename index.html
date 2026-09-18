@@ -9,63 +9,8 @@
   .working{display:inline-flex;align-items:center;gap:7px}.spinner{display:inline-block;width:11px;height:11px;border:2px solid #596168;border-top-color:var(--gold);border-radius:50%;animation:spin .7s linear infinite}@keyframes spin{to{transform:rotate(360deg)}}
   </style>
   <script>
-    const bookmarklet = `javascript:(function(){
-      var l=window.__LEVEL__;
-      if(!l){
-        alert('Open an enclose.horse puzzle first.');
-        return;
-      }
-  
-      var w=window.open('about:blank','_blank');
-      var bonus = (l.hasBonus === undefined ? false : Boolean(l.hasBonus))
-        || l.bonusId !== undefined
-        || l.bonusOptimalScore !== undefined;
-      
-      var enc=function(o){
-        var a=new TextEncoder().encode(JSON.stringify(o)),s='';
-        for(var i=0;i<a.length;i++)s+=String.fromCharCode(a[i]);
-        return btoa(s);
-      };
-  
-      var done=function(b){
-        var u="https://tristan852.github.io/enclose-horse-solver/"
-          +"?level="+encodeURIComponent(enc(l))
-          +(b?"&bonus="+encodeURIComponent(enc(b)):"");
-  
-        if(w&&!w.closed) w.location=u;
-        else location.href=u;
-      };
-  
-      if(bonus){
-        fetch('/api/daily/bonus/'+encodeURIComponent(l.id))
-          .then(function(r){
-            if(!r.ok) throw Error('Bonus request failed ('+r.status+')');
-            return r.json();
-          })
-          .then(function(b){
-            b.type=l.bonusType||b.bonusType||(l.bonus&&l.bonus.type)||'default';
-  
-            var names={
-              costlywalls:'Costly Walls',
-              lovebirds:'Lovebirds',
-              loversquarrel:'Lovers Quarrel'
-            };
-  
-            b.name='Bonus round: '
-              +(names[String(b.type).toLowerCase()]
-                ||String(b.type).replace(/[-_]+/g,' '));
-  
-            done(b);
-          })
-          .catch(function(e){
-            if(w&&!w.closed) w.close();
-            alert('Could not prepare this puzzle: '+e.message);
-          });
-      } else {
-        done(null);
-      }
-    })()`;
-  
+    const bookmarklet=`javascript:(function(){var l=window.__LEVEL__;if(!l){alert('Open an enclose.horse puzzle first.');return;}var w=window.open('about:blank','_blank');var bonus=(l.hasBonus===undefined?false:Boolean(l.hasBonus))||l.bonusId!==undefined||l.bonusOptimalScore!==undefined;var enc=function(o){var a=new TextEncoder().encode(JSON.stringify(o)),s='';for(var i=0;i<a.length;i++)s+=String.fromCharCode(a[i]);return btoa(s);};var done=function(b){var u="https://tristan852.github.io/enclose-horse-solver/"+"?level="+encodeURIComponent(enc(l))+(b?"&bonus="+encodeURIComponent(enc(b)):"");if(w&&!w.closed)w.location=u;else location.href=u;};if(bonus){fetch('/api/daily/bonus/'+encodeURIComponent(l.id)).then(function(r){if(!r.ok)throw Error('Bonus request failed ('+r.status+')');return r.json();}).then(function(b){b.type=l.bonusType||b.bonusType||(l.bonus&&l.bonus.type)||'default';var names={costlywalls:'Costly Walls',lovebirds:'Lovebirds',loversquarrel:'Lovers Quarrel'};b.name='Bonus round: '+(names[String(b.type).toLowerCase()]||String(b.type).replace(/[-_]+/g,' '));done(b);}).catch(function(e){if(w&&!w.closed)w.close();alert('Could not prepare this puzzle: '+e.message);});}else{done(null);}})()`;
+    
     document.addEventListener("DOMContentLoaded", function() {
       document.getElementById("bookmark").href = bookmarklet;
     });
