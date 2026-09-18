@@ -1721,6 +1721,10 @@ function renderSolution(card, solution) {
   const a1 = solution.walls || [];
   const a2 = solution.enclosed || [];
   
+  console.log("---");
+  console.log(a1);
+  console.log(a1.flat())
+  
   const walls = new Set(a1.flat());
   const enclosed = new Set(a2.flat());
 
