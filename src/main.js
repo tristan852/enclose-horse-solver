@@ -13,7 +13,6 @@ const DIRECTIONS = Object.freeze([
 const MIN_SCORE = -2147483648;
 const NEG_INF = -1_000_000_000;
 const POS_INF = 1_000_000_000;
-const SOLVE_TIME_SECONDS = 120;
 
 const TILE = Object.freeze({
   GRASS: "GRASS",
@@ -494,10 +493,6 @@ class PuzzleSolver {
         "SCIP did not accept SetNumThreads(1)."
       );
     }
-
-    this.model.SetTimeLimit(
-      SOLVE_TIME_SECONDS * 1000
-    );
 
     this.wall = makeGrid(
       puzzle.width,
