@@ -2008,7 +2008,6 @@ async function initiallySolvePuzzle(puzzle, view) {
         
         for(let i = 0; i < 9; i++) {
           
-          console.log("db: " + optimalScore);
           solution = await puzzleSolver.solve(optimalScore);
           if(!solution) {
             
