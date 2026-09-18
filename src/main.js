@@ -1903,8 +1903,8 @@ function showPuzzle(puzzle) {
 }
 
 async function initiallySolvePuzzle(puzzle, view) {
-  let currentSolution = null;
-  let solutionNumber = 0;
+  let solutions = [];
+  let solutionIndex = 0;
   let exhausted = false;
 
   const puzzleSolver =
@@ -1917,73 +1917,91 @@ async function initiallySolvePuzzle(puzzle, view) {
     "finding the first optimal solution…"
   );
   
-  currentSolution = await puzzleSolver.solve();
+  solution = await puzzleSolver.solve();
 
-  console.log(
-    "Solution:",
-    currentSolution
-  );
-
-  console.table(
-    formatBoard(
-      puzzle,
-      currentSolution
-    )
-  );
-
-  if (!currentSolution) {
+  if (!solution) {
     view.status.querySelector("small").textContent =
       "No legal solution found";
     return;
   }
+  
+  solutions.push(solution)
+  renderSolution(view.card, solution);
+  
+  for (let i = 0; i < 9; i++) {
+    
+    setWorking(
+      view.status,
+      "finding next optimal solution…"
+    );
+    
+    solution = await puzzleSolver.solve();
+    if(!solution) {
+      
+      exhausted = true;
+      break;
+    }
+    
+    solutions.push(solution);
+  }
 
   function update() {
-    renderSolution(view.card, currentSolution);
+    renderSolution(view.card, solutions[solutionIndex]);
 
     view.status.querySelector("small").textContent =
-      `solution ${solutionNumber + 1}${exhausted ? "" : "+"}`;
+      `solution ${solutionIndex + 1}/${solutions.length}${exhausted ? "" : "+"}`;
 
     const [previous, next] =
       view.status.querySelectorAll("button");
 
-    previous.disabled = solutionNumber === 0;
-    next.disabled = exhausted;
+    previous.disabled = solutionIndex === 0;
+    next.disabled = solutionIndex + 1 >= solutions.length ? exhausted : false;
   }
 
   const [previous, next] =
     view.status.querySelectorAll("button");
 
   previous.onclick = () => {
-    // In a real implementation, previously computed
-    // solutions would be stored here.
-    if (solutionNumber > 0) {
-      solutionNumber--;
+    if (solutionIndex > 0) {
+      solutionIndex--;
       // Display stored solution...
       update();
     }
   };
 
   next.onclick = async () => {
-    setWorking(
-      view.status,
-      "finding next optimal solution…"
-    );
-
-    await new Promise(resolve =>
-      requestAnimationFrame(resolve)
-    );
-
-    const nextSolution = solve(puzzle);
-
-    if (!nextSolution) {
-      exhausted = true;
+    solutionIndex++;
+    
+    if(solutionIndex >= solutions.length) {
+    
+      if(exhausted) {
+      
+        solutionIndex--;
+        return;
+      }
+    
+      setWorking(
+        view.status,
+        "finding next optimal solution…"
+      );
+      
+      solution = await puzzleSolver.solve();
+      if(solution) {
+      
+        solutions.push(solution);
+        update();
+        
+      } else {
+        
+        solutionIndex--;
+        exhausted = true;
+        update();
+      }
+      
+    } else {
+    
       update();
-      return;
     }
-
-    currentSolution = nextSolution;
-    solutionNumber++;
-    update();
   };
 
   update();
@@ -2099,8 +2117,8 @@ async function main() {
   
   results.hidden = false;
   
-  view1 = showPuzzle(puzzle);
-  view2 = showPuzzle(bonusPuzzle);
+  const view1 = showPuzzle(puzzle);
+  const view2 = showPuzzle(bonusPuzzle);
   
   try {
     await initiallySolvePuzzle(puzzle, view1);
