@@ -1724,6 +1724,9 @@ function renderSolution(card, solution) {
   const enclosed = new Set(solution.enclosed || []);
 
   [...board.children].forEach((cell, index) => {
+    
+    console.log(index, cell, walls.has(index))
+    
     cell.classList.toggle("wall", walls.has(index));
     cell.classList.toggle("solution", walls.has(index));
     cell.classList.toggle(
@@ -2014,15 +2017,15 @@ async function main() {
     );
   }
 
-  console.log(
-    "Level:",
-    level
-  );
+  // console.log(
+  //   "Level:",
+  //   level
+  // );
 
-  console.log(
-    "Bonus:",
-    bonus
-  );
+  // console.log(
+  //   "Bonus:",
+  //   bonus
+  // );
 
   const puzzle =
     parsePuzzle(
