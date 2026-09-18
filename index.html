@@ -8,8 +8,8 @@
   .controls button{cursor:pointer;transition:background .15s ease,border-color .15s ease,transform .15s ease,box-shadow .15s ease}.controls button:hover:not(:disabled){background:#30383e;border-color:#59636b;box-shadow:0 3px 10px #0005;transform:translateY(-1px)}.controls button:active:not(:disabled){transform:translateY(0);box-shadow:none}.controls button:focus-visible{outline:2px solid var(--gold);outline-offset:2px}.controls button:disabled{cursor:not-allowed;opacity:.38;box-shadow:none}
   .working{display:inline-flex;align-items:center;gap:7px}.spinner{display:inline-block;width:11px;height:11px;border:2px solid #596168;border-top-color:var(--gold);border-radius:50%;animation:spin .7s linear infinite}@keyframes spin{to{transform:rotate(360deg)}}
   </style>
-  <script src="./public/coi-serviceworker.js"></script>
-  <script type="module" src="./public/main.js"></script>
+  <script src="./coi-serviceworker.js"></script>
+  <script type="module" src="/src/main.js"></script>
 </head>
 <body><main class="app"><header class="brand"><div class="logo">♞</div><div><h1>enclose.horse solver</h1><p>Install once, then solve any open puzzle with one click.</p></div></header>
 <section id="install" class="install"><h2>Install the solver bookmark</h2><p>Drag the button below to your bookmarks bar. Then open any <code>enclose.horse/play/…</code> puzzle and click the bookmark.</p><a id="bookmark" href="#" draggable="true">♞ Solve this enclose.horse puzzle</a><small>Popup blockers may ask you to allow the solver tab once.</small></section>
