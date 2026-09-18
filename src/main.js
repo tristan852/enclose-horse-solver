@@ -1,8 +1,10 @@
-const bookmarklet = `javascript:(function(){var l=window.__LEVEL__;if(!l){alert('Open an enclose.horse puzzle first.');return}var w=window.open('about:blank','_blank');var d=(window.__DAILY_LEVELS__||[]).filter(function(x){return String(x.dayNumber)===String(l.dayNumber)||x.id===l.id})[0]||{};var bid=l.bonusId||d.bonusId||(l.bonus&&l.bonus.id);var enc=function(o){var a=new TextEncoder().encode(JSON.stringify(o)),s='';for(var i=0;i<a.length;i++)s+=String.fromCharCode(a[i]);return btoa(s)};var done=function(b){var u="https://tristan852.github.io/enclose-horse-solver/"+'?level=%27+encodeURIComponent(enc(l))+(b?%27&bonus=%27+encodeURIComponent(enc(b)):%27%27);if(w&&!w.closed)w.location=u;else location.href=u};if(bid){fetch(%27/api/daily/bonus/%27+encodeURIComponent(l.id)).then(function(r){if(!r.ok)throw Error(%27Bonus request failed (%27+r.status+%27)%27);return r.json()}).then(function(b){b.type=l.bonusType||d.bonusType||(l.bonus&&l.bonus.type)||%27default%27;var names={costlywalls:%27Costly Walls%27,lovebirds:%27Lovebirds%27,loversquarrel:%27Lovers Quarrel%27};b.name=%27Bonus round: %27+(names[String(b.type).toLowerCase()]||String(b.type).replace(/[-_]+/g,%27 %27));done(b)}).catch(function(e){if(w&&!w.closed)w.close();alert(%27Could not prepare this puzzle: %27+e.message)})}else done(null)})()`
-
-document.getElementById("bookmark").href = bookmarklet;
-
 import { CpModel, CpSolver } from "or-tools-wasm/cp-sat";
+
+/*
+ * --------------------------------------------------------------------------
+ * Constants
+ * --------------------------------------------------------------------------
+ */
 
 const NEIGHBOUR_DIRECTIONS = [
   [1, 0],
@@ -13,55 +15,6 @@ const NEIGHBOUR_DIRECTIONS = [
 
 const MIN_SCORE = Number.MIN_SAFE_INTEGER;
 
-/*
- * or-tools-wasm exposes generic linear constraints as:
- *
- *   model.addLinearConstraint(expression, lowerBound, upperBound)
- *
- * Keep all constraints going through these helpers. This avoids relying on
- * addLessOrEqual/addGreaterOrEqual/addEquality methods that are not exposed
- * by the installed WASM wrapper.
- *
- * All variables in this model are small:
- *
- *   BoolVar: 0..1
- *   flow:    0..number of reachable cells
- *
- * Therefore these finite bounds are more than sufficient.
- */
-const CONSTRAINT_MIN = -1_000_000_000;
-const CONSTRAINT_MAX = 1_000_000_000;
-
-function addLessOrEqual(model, expression, upperBound) {
-  model.addLinearConstraint(
-    expression,
-    CONSTRAINT_MIN,
-    upperBound
-  );
-}
-
-function addGreaterOrEqual(model, expression, lowerBound) {
-  model.addLinearConstraint(
-    expression,
-    lowerBound,
-    CONSTRAINT_MAX
-  );
-}
-
-function addEquality(model, expression, value) {
-  model.addLinearConstraint(
-    expression,
-    value,
-    value
-  );
-}
-
-/*
- * --------------------------------------------------------------------------
- * Puzzle parsing
- * --------------------------------------------------------------------------
- */
-
 const TILE = Object.freeze({
   GRASS: "GRASS",
   WATER: "WATER",
@@ -70,8 +23,160 @@ const TILE = Object.freeze({
   PORTAL: "PORTAL",
 });
 
+/*
+ * CP-SAT integer domains are finite.
+ *
+ * The actual values in this model are tiny:
+ *
+ *   bool = 0..1
+ *   flow = 0..number of reachable cells
+ *
+ * These bounds are therefore deliberately generous.
+ */
+const CONSTRAINT_MIN = -1_000_000_000;
+const CONSTRAINT_MAX = 1_000_000_000;
+
+
+/*
+ * --------------------------------------------------------------------------
+ * CP-SAT constraint helpers
+ * --------------------------------------------------------------------------
+ *
+ * The installed or-tools-wasm wrapper exposes:
+ *
+ *   model.addLinearConstraint(expression, lowerBound, upperBound)
+ *
+ * rather than addLessOrEqual/addGreaterOrEqual.
+ */
+
+function addLessOrEqual(model, expression, upperBound) {
+  if (expression == null) {
+    throw new Error(
+      "Attempted to add <= constraint with a null expression."
+    );
+  }
+
+  model.addLinearConstraint(
+    expression,
+    CONSTRAINT_MIN,
+    upperBound
+  );
+}
+
+function addGreaterOrEqual(model, expression, lowerBound) {
+  if (expression == null) {
+    throw new Error(
+      "Attempted to add >= constraint with a null expression."
+    );
+  }
+
+  model.addLinearConstraint(
+    expression,
+    lowerBound,
+    CONSTRAINT_MAX
+  );
+}
+
+function addEquality(model, expression, value) {
+  if (expression == null) {
+    throw new Error(
+      "Attempted to add equality constraint with a null expression."
+    );
+  }
+
+  model.addLinearConstraint(
+    expression,
+    value,
+    value
+  );
+}
+
+
+/*
+ * --------------------------------------------------------------------------
+ * Linear-expression helpers
+ * --------------------------------------------------------------------------
+ *
+ * Important:
+ *
+ * null represents the constant zero.
+ *
+ * This lets us build expressions incrementally without ever doing:
+ *
+ *   undefined.plus(...)
+ *
+ * or:
+ *
+ *   0.plus(...)
+ */
+
+function expressionPlus(a, b) {
+  if (a == null) {
+    return b;
+  }
+
+  if (b == null) {
+    return a;
+  }
+
+  return a.plus(b);
+}
+
+function expressionMinus(a, b) {
+  if (b == null) {
+    return a;
+  }
+
+  if (a == null) {
+    return b.times(-1);
+  }
+
+  return a.plus(b.times(-1));
+}
+
+function expressionTimes(a, coefficient) {
+  if (a == null) {
+    return null;
+  }
+
+  return a.times(coefficient);
+}
+
+function sumExpressions(expressions) {
+  let result = null;
+
+  for (const expression of expressions) {
+    result = expressionPlus(
+      result,
+      expression
+    );
+  }
+
+  return result;
+}
+
+function boolValue(solver, variable) {
+  return solver.value(variable) >= 0.5;
+}
+
+function addAtMostOne(model, a, b) {
+  addLessOrEqual(
+    model,
+    expressionPlus(a, b),
+    1
+  );
+}
+
+
+/*
+ * --------------------------------------------------------------------------
+ * Puzzle decoding / parsing
+ * --------------------------------------------------------------------------
+ */
+
 function decodeBase64Json(encoded) {
   const binary = atob(encoded);
+
   const bytes = Uint8Array.from(
     binary,
     c => c.charCodeAt(0)
@@ -144,7 +249,10 @@ function parsePuzzle(level, bonus = null) {
     .replace(/\r/g, "")
     .split("\n");
 
-  if (!rows.length || !rows[0].length) {
+  if (
+    !rows.length ||
+    !rows[0].length
+  ) {
     throw new Error(
       "Invalid puzzle: empty map."
     );
@@ -153,7 +261,11 @@ function parsePuzzle(level, bonus = null) {
   const width = rows[0].length;
   const height = rows.length;
 
-  if (!rows.every(row => row.length === width)) {
+  if (
+    !rows.every(
+      row => row.length === width
+    )
+  ) {
     throw new Error(
       "Invalid puzzle: map rows have different widths."
     );
@@ -210,6 +322,7 @@ function parsePuzzle(level, bonus = null) {
   };
 }
 
+
 /*
  * --------------------------------------------------------------------------
  * Tile helpers
@@ -250,64 +363,16 @@ function tileScore(type) {
   }
 }
 
-/*
- * --------------------------------------------------------------------------
- * Linear expression helpers
- * --------------------------------------------------------------------------
- *
- * or-tools-wasm uses:
- *
- *   expr.plus(other)
- *   expr.times(coefficient)
- */
-
-function expressionPlus(a, b) {
-  return a.plus(b);
-}
-
-function expressionMinus(a, b) {
-  return a.plus(
-    b.times(-1)
-  );
-}
-
-function expressionTimes(a, coefficient) {
-  return a.times(coefficient);
-}
-
-function sumExpressions(expressions) {
-  if (!expressions.length) {
-    return null;
-  }
-
-  let result = expressions[0];
-
-  for (let i = 1; i < expressions.length; i++) {
-    result = expressionPlus(
-      result,
-      expressions[i]
-    );
-  }
-
-  return result;
-}
-
-function boolValue(solver, variable) {
-  return solver.value(variable) >= 0.5;
-}
-
-function addAtMostOne(model, a, b) {
-  addLessOrEqual(
-    model,
-    expressionPlus(a, b),
-    1
-  );
-}
 
 /*
  * --------------------------------------------------------------------------
- * Reachability
+ * Static reachability
  * --------------------------------------------------------------------------
+ *
+ * This determines which cells are even potentially reachable before walls
+ * are considered.
+ *
+ * Portals are treated as a connection between portal cells.
  */
 
 function explore(
@@ -328,7 +393,7 @@ function explore(
   } = puzzle;
 
   /*
-   * Normal four-way movement.
+   * Normal movement.
    */
   for (const [dx, dy] of NEIGHBOUR_DIRECTIONS) {
     const x2 = x + dx;
@@ -360,7 +425,10 @@ function explore(
   }
 
   /*
-   * Portals connect to another portal.
+   * Portal movement.
+   *
+   * Connect this portal to every other portal. Since explore() marks
+   * visited cells, this is safe even if there are multiple portals.
    */
   if (
     !isPortal(
@@ -373,16 +441,16 @@ function explore(
   for (let x2 = 0; x2 < width; x2++) {
     for (let y2 = 0; y2 < height; y2++) {
       if (
-        !isPortal(
-          puzzle.tileType(x2, y2)
-        )
+        x2 === x &&
+        y2 === y
       ) {
         continue;
       }
 
       if (
-        x2 === x &&
-        y2 === y
+        !isPortal(
+          puzzle.tileType(x2, y2)
+        )
       ) {
         continue;
       }
@@ -393,8 +461,6 @@ function explore(
         y2,
         reachable
       );
-
-      return;
     }
   }
 }
@@ -438,9 +504,9 @@ function calculateStaticReachability(puzzle) {
           y,
           horseReachable
         );
-      } else if (
-        isUnicorn(type)
-      ) {
+      }
+
+      if (isUnicorn(type)) {
         explore(
           puzzle,
           x,
@@ -457,9 +523,10 @@ function calculateStaticReachability(puzzle) {
   };
 }
 
+
 /*
  * --------------------------------------------------------------------------
- * Solver
+ * Puzzle solver
  * --------------------------------------------------------------------------
  */
 
@@ -468,46 +535,62 @@ class PuzzleSolver {
     this.puzzle = puzzle;
     this.model = new CpModel();
 
+    const {
+      width,
+      height,
+    } = puzzle;
+
     this.wallVariables =
       Array.from(
-        { length: puzzle.width },
+        { length: width },
         () =>
-          Array(puzzle.height)
-    );
+          Array(height)
+      );
 
     this.horseReachableVariables =
       Array.from(
-        { length: puzzle.width },
+        { length: width },
         () =>
-          Array(puzzle.height)
+          Array(height)
       );
 
     this.unicornReachableVariables =
       Array.from(
-        { length: puzzle.width },
+        { length: width },
         () =>
-          Array(puzzle.height)
+          Array(height)
       );
 
     this.horseReachable = null;
     this.unicornReachable = null;
 
+    /*
+     * These are initialized to null deliberately.
+     *
+     * null means mathematical zero.
+     */
     this.flowPreservationExpressions =
       Array.from(
-        { length: puzzle.width },
+        { length: width },
         () =>
-          Array(puzzle.height)
+          Array(height).fill(null)
       );
 
     this.flow2PreservationExpressions =
       Array.from(
-        { length: puzzle.width },
+        { length: width },
         () =>
-          Array(puzzle.height)
+          Array(height).fill(null)
       );
 
     this.initialize();
   }
+
+  /*
+   * ------------------------------------------------------------------------
+   * Main initialization
+   * ------------------------------------------------------------------------
+   */
 
   initialize() {
     const {
@@ -521,11 +604,14 @@ class PuzzleSolver {
       wallBudget,
     } = puzzle;
 
+    /*
+     * --------------------------------------------------------------
+     * 1. Create all variables first.
+     * --------------------------------------------------------------
+     */
+
     const allWalls = [];
 
-    /*
-     * Variables.
-     */
     for (
       let x = 0;
       x < width;
@@ -538,17 +624,17 @@ class PuzzleSolver {
       ) {
         const wall =
           model.newBoolVar(
-            `tileHasWall${x},${y}`
+            `wall_${x}_${y}`
           );
 
         const horse =
           model.newBoolVar(
-            `tileIsHorseReachable${x},${y}`
+            `horse_${x}_${y}`
           );
 
         const unicorn =
           model.newBoolVar(
-            `tileIsUnicornReachable${x},${y}`
+            `unicorn_${x}_${y}`
           );
 
         this.wallVariables[x][y] =
@@ -565,8 +651,11 @@ class PuzzleSolver {
     }
 
     /*
-     * Number of walls <= budget.
+     * --------------------------------------------------------------
+     * 2. Wall budget.
+     * --------------------------------------------------------------
      */
+
     addLessOrEqual(
       model,
       sumExpressions(allWalls),
@@ -574,8 +663,11 @@ class PuzzleSolver {
     );
 
     /*
-     * Static connectivity.
+     * --------------------------------------------------------------
+     * 3. Static reachability.
+     * --------------------------------------------------------------
      */
+
     const staticReachability =
       calculateStaticReachability(
         puzzle
@@ -588,8 +680,11 @@ class PuzzleSolver {
       staticReachability.unicornReachable;
 
     /*
-     * Per-cell rules.
+     * --------------------------------------------------------------
+     * 4. Per-cell constraints.
+     * --------------------------------------------------------------
      */
+
     for (
       let x = 0;
       x < width;
@@ -608,9 +703,11 @@ class PuzzleSolver {
     }
 
     /*
-     * Cells that cannot possibly be reached
-     * are forced to false.
+     * --------------------------------------------------------------
+     * 5. Remove cells that cannot possibly be reached.
+     * --------------------------------------------------------------
      */
+
     for (
       let x = 0;
       x < width;
@@ -641,6 +738,10 @@ class PuzzleSolver {
           );
         }
 
+        /*
+         * If neither animal can ever reach this cell, it doesn't need
+         * to be a wall.
+         */
         if (
           !this.horseReachable[x][y] &&
           !this.unicornReachable[x][y]
@@ -655,29 +756,40 @@ class PuzzleSolver {
     }
 
     /*
-     * Flow bounds.
+     * --------------------------------------------------------------
+     * 6. Calculate safe flow bounds.
+     * --------------------------------------------------------------
      */
+
     const maxFlow =
       Math.max(
-        0,
+        1,
         this.horseReachable
           .flat()
           .filter(Boolean)
-          .length - 1
+          .length
       );
 
     const maxFlow2 =
       Math.max(
-        0,
+        1,
         this.unicornReachable
           .flat()
           .filter(Boolean)
-          .length - 1
+          .length
       );
 
     /*
-     * Flow constraints.
+     * --------------------------------------------------------------
+     * 7. IMPORTANT:
+     *
+     * First initialize EVERY flow expression.
+     *
+     * We must not modify a neighbour's expression before that
+     * neighbour has received its base expression.
+     * --------------------------------------------------------------
      */
+
     for (
       let x = 0;
       x < width;
@@ -688,7 +800,30 @@ class PuzzleSolver {
         y < height;
         y++
       ) {
-        this.initializeFlow(
+        this.initializeFlowExpression(
+          x,
+          y
+        );
+      }
+    }
+
+    /*
+     * --------------------------------------------------------------
+     * 8. Now add all flow edges.
+     * --------------------------------------------------------------
+     */
+
+    for (
+      let x = 0;
+      x < width;
+      x++
+    ) {
+      for (
+        let y = 0;
+        y < height;
+        y++
+      ) {
+        this.initializeFlowEdges(
           x,
           y,
           maxFlow,
@@ -698,8 +833,44 @@ class PuzzleSolver {
     }
 
     /*
-     * Objective.
+     * --------------------------------------------------------------
+     * 9. Finally add flow conservation.
+     * --------------------------------------------------------------
      */
+
+    for (
+      let x = 0;
+      x < width;
+      x++
+    ) {
+      for (
+        let y = 0;
+        y < height;
+        y++
+      ) {
+        const type =
+          puzzle.tileType(x, y);
+
+        addEquality(
+          model,
+          this.flowPreservationExpressions[x][y],
+          isHorse(type) ? 1 : 0
+        );
+
+        addEquality(
+          model,
+          this.flow2PreservationExpressions[x][y],
+          isUnicorn(type) ? 1 : 0
+        );
+      }
+    }
+
+    /*
+     * --------------------------------------------------------------
+     * 10. Objective.
+     * --------------------------------------------------------------
+     */
+
     const objectiveTerms = [];
 
     for (
@@ -733,6 +904,11 @@ class PuzzleSolver {
           );
         }
 
+        /*
+         * Costly Walls:
+         *
+         * Every wall costs 6 points.
+         */
         if (
           puzzle.type ===
           "COSTLY_WALLS"
@@ -747,12 +923,26 @@ class PuzzleSolver {
       }
     }
 
-    model.maximize(
+    const objective =
       sumExpressions(
         objectiveTerms
-      )
-    );
+      );
+
+    if (objective == null) {
+      throw new Error(
+        "Could not construct objective expression."
+      );
+    }
+
+    model.maximize(objective);
   }
+
+
+  /*
+   * ------------------------------------------------------------------------
+   * Cell constraints
+   * ------------------------------------------------------------------------
+   */
 
   initializeCell(x, y) {
     const {
@@ -773,12 +963,16 @@ class PuzzleSolver {
       this.unicornReachableVariables[x][y];
 
     /*
-     * Bonus-mode rules.
+     * Bonus modes.
      */
+
     if (
       puzzle.type ===
       "LOVEBIRDS"
     ) {
+      /*
+       * horse == unicorn
+       */
       addEquality(
         model,
         expressionMinus(
@@ -791,15 +985,18 @@ class PuzzleSolver {
       puzzle.type ===
       "LOVERS_QUARREL"
     ) {
-      addLessOrEqual(
+      /*
+       * horse + unicorn <= 1
+       */
+      addAtMostOne(
         model,
-        expressionPlus(
-          horse,
-          unicorn
-        ),
-        1
+        horse,
+        unicorn
       );
     } else {
+      /*
+       * Normal puzzle has no unicorn.
+       */
       addEquality(
         model,
         unicorn,
@@ -808,10 +1005,7 @@ class PuzzleSolver {
     }
 
     /*
-     * A cell cannot simultaneously be:
-     *
-     *   wall + horse
-     *   wall + unicorn
+     * Wall cannot coexist with an animal.
      */
     addAtMostOne(
       model,
@@ -826,7 +1020,7 @@ class PuzzleSolver {
     );
 
     /*
-     * The animal's starting cell must be reachable.
+     * Starting cells are always reachable.
      */
     if (isHorse(type)) {
       addEquality(
@@ -845,7 +1039,7 @@ class PuzzleSolver {
     }
 
     /*
-     * Only grass may become a wall.
+     * Only grass can be turned into a wall.
      */
     if (!isGrass(type)) {
       addEquality(
@@ -856,7 +1050,7 @@ class PuzzleSolver {
     }
 
     /*
-     * Edge/water cells cannot contain reachable animals.
+     * Edge and water cells cannot be animal-reachable.
      */
     const isOnEdge =
       x === 0 ||
@@ -882,15 +1076,28 @@ class PuzzleSolver {
     }
   }
 
-  initializeFlow(
-    x,
-    y,
-    maxFlow,
-    maxFlow2
-  ) {
+
+  /*
+   * ------------------------------------------------------------------------
+   * Flow: base expressions
+   * ------------------------------------------------------------------------
+   *
+   * For each cell:
+   *
+   * Source:
+   *
+   *   sum(reachable) - outgoing + incoming = 1
+   *
+   * Non-source:
+   *
+   *   -reachable - outgoing + incoming = 0
+   *
+   * The edge terms are added later.
+   */
+
+  initializeFlowExpression(x, y) {
     const {
       puzzle,
-      model,
     } = this;
 
     const type =
@@ -906,15 +1113,7 @@ class PuzzleSolver {
     const unicornTerms = [];
 
     /*
-     * Source flow expression.
-     *
-     * At the source:
-     *
-     *   sum(reachable) - outgoing flow = 1
-     *
-     * At every other reachable node:
-     *
-     *   -reachable - outgoing + incoming = 0
+     * Horse source.
      */
     if (isHorse(type)) {
       for (
@@ -941,6 +1140,9 @@ class PuzzleSolver {
       );
     }
 
+    /*
+     * Unicorn source.
+     */
     if (isUnicorn(type)) {
       for (
         let x2 = 0;
@@ -975,6 +1177,28 @@ class PuzzleSolver {
       sumExpressions(
         unicornTerms
       );
+  }
+
+
+  /*
+   * ------------------------------------------------------------------------
+   * Flow: edge construction
+   * ------------------------------------------------------------------------
+   */
+
+  initializeFlowEdges(
+    x,
+    y,
+    maxFlow,
+    maxFlow2
+  ) {
+    const {
+      puzzle,
+      model,
+    } = this;
+
+    const type =
+      puzzle.tileType(x, y);
 
     if (isWater(type)) {
       return;
@@ -990,9 +1214,21 @@ class PuzzleSolver {
       return;
     }
 
+    const horse =
+      this.horseReachableVariables[x][y];
+
+    const unicorn =
+      this.unicornReachableVariables[x][y];
+
+    const ownWall =
+      this.wallVariables[x][y];
+
     /*
-     * Normal neighbour connections.
+     * --------------------------------------------------------------
+     * Normal four-way edges.
+     * --------------------------------------------------------------
      */
+
     for (
       const [dx, dy]
       of NEIGHBOUR_DIRECTIONS
@@ -1017,40 +1253,39 @@ class PuzzleSolver {
         continue;
       }
 
-      const ownWall =
-        this.wallVariables[x][y];
-
       const neighbourWall =
         this.wallVariables[x2][y2];
 
       /*
-       * Horse reachability:
-       *
-       * horse[x,y]
-       *   - wall[x2,y2]
-       *   - horse[x2,y2]
-       * <= 0
+       * ----------------------------------------------------------
+       * Horse.
+       * ----------------------------------------------------------
        */
+
       if (hr) {
-        const neighbourTerms = [
-          horse,
-
-          expressionTimes(
-            neighbourWall,
-            -1
-          ),
-
-          expressionTimes(
-            this.horseReachableVariables[x2][y2],
-            -1
-          ),
-        ];
+        /*
+         * If this cell is reachable and the neighbour isn't a wall,
+         * the neighbour must also be reachable.
+         *
+         * horse[x]
+         *   <= wall[y] + horse[y]
+         */
 
         addLessOrEqual(
           model,
-          sumExpressions(
-            neighbourTerms
-          ),
+          sumExpressions([
+            horse,
+
+            expressionTimes(
+              neighbourWall,
+              -1
+            ),
+
+            expressionTimes(
+              this.horseReachableVariables[x2][y2],
+              -1
+            ),
+          ]),
           0
         );
 
@@ -1058,15 +1293,21 @@ class PuzzleSolver {
           model.newIntVar(
             0,
             maxFlow,
-            `flow${x},${y},${x2},${y2}`
+            `horseFlow_${x}_${y}_${x2}_${y2}`
           );
 
+        /*
+         * outgoing
+         */
         this.flowPreservationExpressions[x][y] =
           expressionMinus(
             this.flowPreservationExpressions[x][y],
             flow
           );
 
+        /*
+         * incoming
+         */
         this.flowPreservationExpressions[x2][y2] =
           expressionPlus(
             this.flowPreservationExpressions[x2][y2],
@@ -1074,8 +1315,9 @@ class PuzzleSolver {
           );
 
         /*
-         * flow + maxFlow * neighbourWall <= maxFlow
+         * A wall on either endpoint blocks the flow.
          */
+
         addLessOrEqual(
           model,
           expressionPlus(
@@ -1088,9 +1330,6 @@ class PuzzleSolver {
           maxFlow
         );
 
-        /*
-         * flow + maxFlow * ownWall <= maxFlow
-         */
         addLessOrEqual(
           model,
           expressionPlus(
@@ -1105,28 +1344,27 @@ class PuzzleSolver {
       }
 
       /*
-       * Unicorn reachability.
+       * ----------------------------------------------------------
+       * Unicorn.
+       * ----------------------------------------------------------
        */
+
       if (ur) {
-        const neighbourTerms = [
-          unicorn,
-
-          expressionTimes(
-            neighbourWall,
-            -1
-          ),
-
-          expressionTimes(
-            this.unicornReachableVariables[x2][y2],
-            -1
-          ),
-        ];
-
         addLessOrEqual(
           model,
-          sumExpressions(
-            neighbourTerms
-          ),
+          sumExpressions([
+            unicorn,
+
+            expressionTimes(
+              neighbourWall,
+              -1
+            ),
+
+            expressionTimes(
+              this.unicornReachableVariables[x2][y2],
+              -1
+            ),
+          ]),
           0
         );
 
@@ -1134,7 +1372,7 @@ class PuzzleSolver {
           model.newIntVar(
             0,
             maxFlow2,
-            `flow2${x},${y},${x2},${y2}`
+            `unicornFlow_${x}_${y}_${x2}_${y2}`
           );
 
         this.flow2PreservationExpressions[x][y] =
@@ -1149,9 +1387,6 @@ class PuzzleSolver {
             flow
           );
 
-        /*
-         * flow + maxFlow2 * neighbourWall <= maxFlow2
-         */
         addLessOrEqual(
           model,
           expressionPlus(
@@ -1164,9 +1399,6 @@ class PuzzleSolver {
           maxFlow2
         );
 
-        /*
-         * flow + maxFlow2 * ownWall <= maxFlow2
-         */
         addLessOrEqual(
           model,
           expressionPlus(
@@ -1182,11 +1414,16 @@ class PuzzleSolver {
     }
 
     /*
-     * Portal connection.
+     * --------------------------------------------------------------
+     * Portal edge.
+     * --------------------------------------------------------------
+     *
+     * Connect this portal to every other portal.
+     *
+     * This is safer than selecting only the first portal.
      */
-    if (isPortal(type)) {
-      let found = false;
 
+    if (isPortal(type)) {
       for (
         let x2 = 0;
         x2 < puzzle.width;
@@ -1198,128 +1435,116 @@ class PuzzleSolver {
           y2++
         ) {
           if (
-            puzzle.tileType(x2, y2) !==
-            type
-          ) {
-            continue;
-          }
-
-          if (
             x2 === x &&
             y2 === y
           ) {
             continue;
           }
 
+          if (
+            !isPortal(
+              puzzle.tileType(x2, y2)
+            )
+          ) {
+            continue;
+          }
+
+          /*
+           * Adjacent portals already have a normal four-way edge.
+           */
           const distance =
             Math.abs(x2 - x) +
             Math.abs(y2 - y);
 
-          if (distance > 1) {
-            /*
-             * Horse portal connection.
-             */
-            if (hr) {
-              addLessOrEqual(
-                model,
-                sumExpressions([
-                  horse,
-
-                  expressionTimes(
-                    this.horseReachableVariables[x2][y2],
-                    -1
-                  ),
-                ]),
-                0
-              );
-
-              const flow =
-                model.newIntVar(
-                  0,
-                  maxFlow,
-                  `portalFlow${x},${y},${x2},${y2}`
-                );
-
-              this.flowPreservationExpressions[x][y] =
-                expressionMinus(
-                  this.flowPreservationExpressions[x][y],
-                  flow
-                );
-
-              this.flowPreservationExpressions[x2][y2] =
-                expressionPlus(
-                  this.flowPreservationExpressions[x2][y2],
-                  flow
-                );
-            }
-
-            /*
-             * Unicorn portal connection.
-             */
-            if (ur) {
-              addLessOrEqual(
-                model,
-                sumExpressions([
-                  unicorn,
-
-                  expressionTimes(
-                    this.unicornReachableVariables[x2][y2],
-                    -1
-                  ),
-                ]),
-                0
-              );
-
-              const flow =
-                model.newIntVar(
-                  0,
-                  maxFlow2,
-                  `portalFlow2${x},${y},${x2},${y2}`
-                );
-
-              this.flow2PreservationExpressions[x][y] =
-                expressionMinus(
-                  this.flow2PreservationExpressions[x][y],
-                  flow
-                );
-
-              this.flow2PreservationExpressions[x2][y2] =
-                expressionPlus(
-                  this.flow2PreservationExpressions[x2][y2],
-                  flow
-                );
-            }
+          if (distance <= 1) {
+            continue;
           }
 
-          found = true;
-          break;
-        }
+          /*
+           * Horse portal edge.
+           */
+          if (hr) {
+            addLessOrEqual(
+              model,
+              sumExpressions([
+                horse,
 
-        if (found) {
-          break;
+                expressionTimes(
+                  this.horseReachableVariables[x2][y2],
+                  -1
+                ),
+              ]),
+              0
+            );
+
+            const flow =
+              model.newIntVar(
+                0,
+                maxFlow,
+                `horsePortalFlow_${x}_${y}_${x2}_${y2}`
+              );
+
+            this.flowPreservationExpressions[x][y] =
+              expressionMinus(
+                this.flowPreservationExpressions[x][y],
+                flow
+              );
+
+            this.flowPreservationExpressions[x2][y2] =
+              expressionPlus(
+                this.flowPreservationExpressions[x2][y2],
+                flow
+              );
+          }
+
+          /*
+           * Unicorn portal edge.
+           */
+          if (ur) {
+            addLessOrEqual(
+              model,
+              sumExpressions([
+                unicorn,
+
+                expressionTimes(
+                  this.unicornReachableVariables[x2][y2],
+                  -1
+                ),
+              ]),
+              0
+            );
+
+            const flow =
+              model.newIntVar(
+                0,
+                maxFlow2,
+                `unicornPortalFlow_${x}_${y}_${x2}_${y2}`
+              );
+
+            this.flow2PreservationExpressions[x][y] =
+              expressionMinus(
+                this.flow2PreservationExpressions[x][y],
+                flow
+              );
+
+            this.flow2PreservationExpressions[x2][y2] =
+              expressionPlus(
+                this.flow2PreservationExpressions[x2][y2],
+                flow
+              );
+          }
         }
       }
     }
-
-    /*
-     * Flow conservation.
-     */
-    addEquality(
-      model,
-      this.flowPreservationExpressions[x][y],
-      isHorse(type) ? 1 : 0
-    );
-
-    addEquality(
-      model,
-      this.flow2PreservationExpressions[x][y],
-      isUnicorn(type) ? 1 : 0
-    );
   }
 
+
   /*
-   * Prevent the exact same wall configuration from being returned.
+   * ------------------------------------------------------------------------
+   * Blacklist an existing wall solution
+   * ------------------------------------------------------------------------
    */
+
   blacklistSolution(solution) {
     const {
       puzzle,
@@ -1339,15 +1564,11 @@ class PuzzleSolver {
         y < puzzle.height;
         y++
       ) {
-        const wall =
-          solution.isWall[x][y];
-
-        if (wall) {
+        if (
+          solution.isWall[x][y]
+        ) {
           wallsUsed++;
 
-          /*
-           * If this wall was true, contribute -1.
-           */
           terms.push(
             expressionTimes(
               this.wallVariables[x][y],
@@ -1355,9 +1576,6 @@ class PuzzleSolver {
             )
           );
         } else {
-          /*
-           * If this wall was false, contribute +1.
-           */
           terms.push(
             this.wallVariables[x][y]
           );
@@ -1366,7 +1584,7 @@ class PuzzleSolver {
     }
 
     /*
-     * For the exact previous solution:
+     * For the old solution:
      *
      *   sum(terms) = -wallsUsed
      *
@@ -1374,14 +1592,22 @@ class PuzzleSolver {
      *
      *   sum(terms) >= 1 - wallsUsed
      *
-     * guarantees at least one wall variable changes.
+     * forces at least one wall variable to change.
      */
+
     addGreaterOrEqual(
       model,
       sumExpressions(terms),
       1 - wallsUsed
     );
   }
+
+
+  /*
+   * ------------------------------------------------------------------------
+   * Score expression
+   * ------------------------------------------------------------------------
+   */
 
   buildScoreExpression() {
     const {
@@ -1440,6 +1666,13 @@ class PuzzleSolver {
     );
   }
 
+
+  /*
+   * ------------------------------------------------------------------------
+   * Solve
+   * ------------------------------------------------------------------------
+   */
+
   async solve(
     minScore = MIN_SCORE
   ) {
@@ -1484,9 +1717,7 @@ class PuzzleSolver {
       );
 
     const statusName =
-      solver.statusName(
-        status
-      );
+      solver.statusName(status);
 
     console.log(
       "Solver status:",
@@ -1494,10 +1725,8 @@ class PuzzleSolver {
     );
 
     if (
-      statusName !==
-        "OPTIMAL" &&
-      statusName !==
-        "FEASIBLE"
+      statusName !== "OPTIMAL" &&
+      statusName !== "FEASIBLE"
     ) {
       return null;
     }
@@ -1616,6 +1845,7 @@ class PuzzleSolver {
   }
 }
 
+
 /*
  * --------------------------------------------------------------------------
  * Application
@@ -1635,6 +1865,7 @@ async function main() {
     console.log(
       "No puzzle supplied. Open an enclose.horse puzzle and use the bookmarklet."
     );
+
     return;
   }
 
@@ -1703,14 +1934,24 @@ async function main() {
   );
 
   /*
-   * Useful API diagnostic. If this prints false, the package version is
-   * still not the API this solver expects.
+   * Verify the API before constructing the model.
    */
+  const testModel =
+    new CpModel();
+
   console.log(
     "CpModel.addLinearConstraint:",
-    typeof new CpModel()
-      .addLinearConstraint
+    typeof testModel.addLinearConstraint
   );
+
+  if (
+    typeof testModel.addLinearConstraint !==
+    "function"
+  ) {
+    throw new Error(
+      "This or-tools-wasm version does not expose CpModel.addLinearConstraint()."
+    );
+  }
 
   const solver =
     new PuzzleSolver(
@@ -1724,6 +1965,7 @@ async function main() {
     console.log(
       "No feasible solution found."
     );
+
     return;
   }
 

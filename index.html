@@ -8,6 +8,11 @@
   .controls button{cursor:pointer;transition:background .15s ease,border-color .15s ease,transform .15s ease,box-shadow .15s ease}.controls button:hover:not(:disabled){background:#30383e;border-color:#59636b;box-shadow:0 3px 10px #0005;transform:translateY(-1px)}.controls button:active:not(:disabled){transform:translateY(0);box-shadow:none}.controls button:focus-visible{outline:2px solid var(--gold);outline-offset:2px}.controls button:disabled{cursor:not-allowed;opacity:.38;box-shadow:none}
   .working{display:inline-flex;align-items:center;gap:7px}.spinner{display:inline-block;width:11px;height:11px;border:2px solid #596168;border-top-color:var(--gold);border-radius:50%;animation:spin .7s linear infinite}@keyframes spin{to{transform:rotate(360deg)}}
   </style>
+  <script>
+    const bookmarklet = `javascript:(function(){var l=window.__LEVEL__;if(!l){alert('Open an enclose.horse puzzle first.');return}var w=window.open('about:blank','_blank');var d=(window.__DAILY_LEVELS__||[]).filter(function(x){return String(x.dayNumber)===String(l.dayNumber)||x.id===l.id})[0]||{};var bid=l.bonusId||d.bonusId||(l.bonus&&l.bonus.id);var enc=function(o){var a=new TextEncoder().encode(JSON.stringify(o)),s='';for(var i=0;i<a.length;i++)s+=String.fromCharCode(a[i]);return btoa(s)};var done=function(b){var u="https://tristan852.github.io/enclose-horse-solver/"+'?level=%27+encodeURIComponent(enc(l))+(b?%27&bonus=%27+encodeURIComponent(enc(b)):%27%27);if(w&&!w.closed)w.location=u;else location.href=u};if(bid){fetch(%27/api/daily/bonus/%27+encodeURIComponent(l.id)).then(function(r){if(!r.ok)throw Error(%27Bonus request failed (%27+r.status+%27)%27);return r.json()}).then(function(b){b.type=l.bonusType||d.bonusType||(l.bonus&&l.bonus.type)||%27default%27;var names={costlywalls:%27Costly Walls%27,lovebirds:%27Lovebirds%27,loversquarrel:%27Lovers Quarrel%27};b.name=%27Bonus round: %27+(names[String(b.type).toLowerCase()]||String(b.type).replace(/[-_]+/g,%27 %27));done(b)}).catch(function(e){if(w&&!w.closed)w.close();alert(%27Could not prepare this puzzle: %27+e.message)})}else done(null)})()`
+    
+    document.getElementById("bookmark").href = bookmarklet;
+  </script>
   <script src="./coi-serviceworker.js"></script>
   <script type="module" src="/src/main.js"></script>
 </head>
