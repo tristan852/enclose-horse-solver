@@ -1680,6 +1680,321 @@ function logPuzzle(puzzle) {
   );
 }
 
+// RENDERING
+
+const puzzle = {
+  id: "demo-1",
+  name: "Enclose.horse level",
+  budget: 5,
+  map: `
+H..#..U
+.......
+..C....
+....G..
+..S....
+`
+};
+
+const bonusPuzzle = {
+  id: "bonus-1",
+  type: "lovebirds",
+  budget: 4,
+  map: `
+H..A..U
+.......
+..#....
+.......
+`
+};
+
+// Pretend solver.
+// Returns one solution at a time, then null when exhausted.
+const solutions = new Map();
+
+function solve(puzzle) {
+  const index = solutions.get(puzzle.id) || 0;
+
+  const fakeSolutions = [
+    {
+      score: 12,
+      walls: [3, 10, 17, 24, 31],
+      enclosed: [4, 5, 11, 12]
+    },
+    {
+      score: 13,
+      walls: [3, 10, 17, 25],
+      enclosed: [4, 5, 11, 12, 18]
+    }
+  ];
+
+  const solution = fakeSolutions[index];
+
+  if (!solution) return null;
+
+  solutions.set(puzzle.id, index + 1);
+  return solution;
+}
+
+const results = document.getElementById("results");
+const install = document.getElementById("install");
+
+function bonusName(type = "bonus") {
+  return {
+    costlywalls: "Costly Walls",
+    lovebirds: "Lovebirds",
+    loversquarrel: "Lovers Quarrel"
+  }[type] || type.replace(/[-_]+/g, " ").replace(/\b\w/g, c => c.toUpperCase());
+}
+
+function portalColor(value) {
+  const colors = [
+    "#7254a8", "#65afd0", "#5eaa72", "#d34d9a", "#c85f72",
+    "#c4a447", "#8b78c7", "#4d9c9c", "#b56b55", "#7d8fc4"
+  ];
+
+  let index = String(value).charCodeAt(0) % colors.length;
+  return colors[index];
+}
+
+function resizeBoard(card, width, height) {
+  const available = Math.min(
+    620,
+    Math.max(0, Math.min(window.innerWidth, 960) - 88)
+  );
+
+  card.style.setProperty(
+    "--cell",
+    `${Math.max(8, available / Math.max(width, height))}px`
+  );
+}
+
+function renderSolution(card, solution) {
+  const board = card.querySelector(".board");
+  const walls = new Set(solution.walls || []);
+  const enclosed = new Set(solution.enclosed || []);
+
+  [...board.children].forEach((cell, index) => {
+    cell.classList.toggle("wall", walls.has(index));
+    cell.classList.toggle("solution", walls.has(index));
+    cell.classList.toggle(
+      "enclosed",
+      enclosed.has(index) && !walls.has(index)
+    );
+  });
+
+  card.querySelector("strong").textContent = solution.score;
+  card.querySelector("small").textContent =
+    `${walls.size} walls used`;
+}
+
+function setWorking(status, message) {
+  status.querySelector("small").innerHTML =
+    `<span class="working"><span class="spinner"></span>${message}</span>`;
+
+  status.querySelectorAll("button").forEach(button => {
+    button.disabled = true;
+  });
+}
+
+function createPuzzleCard(puzzle) {
+  const rows = puzzle.map.trim().replace(/\r/g, "").split("\n");
+  const height = rows.length;
+  const width = rows[0].length;
+
+  const card = document.createElement("article");
+  const isBonus = puzzle.type && puzzle.type !== "default";
+
+  card.className = `level${isBonus ? " bonus" : ""}`;
+
+  if (isBonus) {
+    card.style.setProperty(
+      "--bonus-bg",
+      puzzle.type === "lovebirds"
+        ? "#182b2b"
+        : puzzle.type === "loversquarrel"
+          ? "#2d2025"
+          : "#302719"
+    );
+  }
+
+  const title = isBonus
+    ? `Bonus round: ${bonusName(puzzle.type)}`
+    : puzzle.name || "Enclose.horse level";
+
+  card.innerHTML = `
+    <h2>${title}</h2>
+    <div class="meta">
+      Puzzle ${puzzle.id || ""} · wall budget ${puzzle.budget}
+    </div>
+  `;
+
+  const board = document.createElement("div");
+  board.className = "board";
+  board.style.gridTemplateColumns =
+    `repeat(${width}, var(--cell))`;
+
+  const symbols = {
+    H: "🐴",
+    U: "🦄",
+    C: "🍒",
+    G: "🍎",
+    S: "🐝"
+  };
+
+  rows.forEach((row, y) => {
+    [...row].forEach((symbol, x) => {
+      const cell = document.createElement("div");
+
+      const isPortal =
+        !symbols[symbol] &&
+        ![".", "#", "~"].includes(symbol);
+
+      cell.className =
+        "cell" +
+        (symbol === "~" ? " water" : "") +
+        (isPortal ? " portal" : "");
+
+      if (symbol === "~") {
+        const n = (x * 31 + y * 17 + 7) % 29;
+        cell.textContent =
+          n === 0 ? "⛵" :
+          n < 5 ? "🌊" :
+          "";
+      } else if (isPortal) {
+        cell.textContent = "🌀";
+        cell.style.backgroundColor = portalColor(symbol);
+        cell.title = `Portal ${symbol}`;
+      } else {
+        cell.textContent = symbols[symbol] || "";
+      }
+
+      board.append(cell);
+    });
+  });
+
+  resizeBoard(card, width, height);
+
+  const boardWrap = document.createElement("div");
+  boardWrap.className = "board-wrap";
+  boardWrap.append(board);
+  card.append(boardWrap);
+
+  const status = document.createElement("div");
+  status.className = "status";
+  status.innerHTML = `
+    <div class="score">
+      Optimal score
+      <strong>…</strong>
+      <small>solving…</small>
+    </div>
+
+    <div class="controls">
+      <button type="button" disabled
+        aria-label="Previous optimal solution">
+        ← Previous
+      </button>
+
+      <button type="button" disabled
+        aria-label="Next optimal solution">
+        Next →
+      </button>
+    </div>
+  `;
+
+  card.append(status);
+
+  return {
+    card,
+    board,
+    status,
+    width,
+    height
+  };
+}
+
+async function showPuzzle(puzzle) {
+  const view = createPuzzleCard(puzzle);
+
+  results.append(view.card);
+
+  window.addEventListener(
+    "resize",
+    () => resizeBoard(view.card, view.width, view.height),
+    { passive: true }
+  );
+
+  let currentSolution = null;
+  let solutionNumber = 0;
+  let exhausted = false;
+
+  setWorking(
+    view.status,
+    "finding the first optimal solution…"
+  );
+
+  // Pretend solving takes a moment.
+  await new Promise(resolve => requestAnimationFrame(resolve));
+
+  currentSolution = solve(puzzle);
+
+  if (!currentSolution) {
+    view.status.querySelector("small").textContent =
+      "No legal solution found";
+    return;
+  }
+
+  function update() {
+    renderSolution(view.card, currentSolution);
+
+    view.status.querySelector("small").textContent =
+      `solution ${solutionNumber + 1}${exhausted ? "" : "+"}`;
+
+    const [previous, next] =
+      view.status.querySelectorAll("button");
+
+    previous.disabled = solutionNumber === 0;
+    next.disabled = exhausted;
+  }
+
+  const [previous, next] =
+    view.status.querySelectorAll("button");
+
+  previous.onclick = () => {
+    // In a real implementation, previously computed
+    // solutions would be stored here.
+    if (solutionNumber > 0) {
+      solutionNumber--;
+      // Display stored solution...
+      update();
+    }
+  };
+
+  next.onclick = async () => {
+    setWorking(
+      view.status,
+      "finding next optimal solution…"
+    );
+
+    await new Promise(resolve =>
+      requestAnimationFrame(resolve)
+    );
+
+    const nextSolution = solve(puzzle);
+
+    if (!nextSolution) {
+      exhausted = true;
+      update();
+      return;
+    }
+
+    currentSolution = nextSolution;
+    solutionNumber++;
+    update();
+  };
+
+  update();
+}
+
 async function main() {
   /*
    * The current or-tools-wasm MPSolver API requires
@@ -1806,6 +2121,26 @@ async function main() {
       solution
     )
   );
+  
+  // RENDERING:
+  
+  if (install) install.hidden = true;
+  
+  if (!results) {
+    console.error("Missing #results element");
+    return;
+  }
+  
+  results.hidden = false;
+  
+  try {
+    await showPuzzle(puzzle);
+    await showPuzzle(bonusPuzzle);
+  } catch (error) {
+    results.hidden = false;
+    results.innerHTML =
+      `<div class="error">${error.message}</div>`;
+  }
 }
 
 main().catch(
