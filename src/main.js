@@ -1925,7 +1925,8 @@ async function initiallySolvePuzzle(puzzle, view) {
     return;
   }
   
-  solutions.push(solution)
+  puzzleSolver.blacklistSolution(solution);
+  solutions.push(solution);
   renderSolution(view.card, solution);
   
   for (let i = 0; i < 9; i++) {
@@ -1942,6 +1943,7 @@ async function initiallySolvePuzzle(puzzle, view) {
       break;
     }
     
+    puzzleSolver.blacklistSolution(solution);
     solutions.push(solution);
   }
 
@@ -1988,6 +1990,7 @@ async function initiallySolvePuzzle(puzzle, view) {
       const solution = await puzzleSolver.solve();
       if(solution) {
       
+        puzzleSolver.blacklistSolution(solution);
         solutions.push(solution);
         update();
         
