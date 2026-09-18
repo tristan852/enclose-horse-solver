@@ -177,15 +177,10 @@ function tileScore(type) {
   }
 }
 
-function puzzleType(level, bonus) {
-  const raw = String(
-    level?.bonusType ??
-    bonus?.type ??
-    level?.bonus?.type ??
-    "default"
-  ).toLowerCase();
-
-  switch (raw) {
+function puzzleType(type) {
+  if(type == null) return "default";
+  
+  switch (type) {
     case "costlywalls":
     case "costly_walls":
     case "costly-walls":
@@ -208,7 +203,7 @@ function puzzleType(level, bonus) {
 
 function parsePuzzle(
   level,
-  bonus = null
+  isBonus = false
 ) {
   if (
     !level ||
@@ -290,8 +285,7 @@ function parsePuzzle(
 
   return {
     level,
-    bonus,
-
+    
     width,
     height,
 
@@ -305,8 +299,7 @@ function parsePuzzle(
         : Number(level.optimalScore),
 
     type: puzzleType(
-      level,
-      bonus
+      isBonus ? level.bonusType : null
     ),
 
     tiles,
@@ -1754,7 +1747,13 @@ async function main() {
   const puzzle =
     parsePuzzle(
       level,
-      bonus
+      false
+    );
+  
+  const bonusPuzzle =
+    parsePuzzle(
+      bonus,
+      true
     );
 
   logPuzzle(
