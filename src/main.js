@@ -1462,8 +1462,7 @@ class PuzzleSolver {
     );
 
     if (
-      status !== MPSolver.OPTIMAL &&
-      status !== MPSolver.FEASIBLE
+      status !== MPSolver.OPTIMAL
     ) {
       return null;
     }
