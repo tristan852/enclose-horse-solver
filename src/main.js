@@ -2099,31 +2099,6 @@ async function main() {
   
   // RENDERING:
   
-  const puzzle = {
-    id: "demo-1",
-    name: "Enclose.horse level",
-    budget: 5,
-    map: `
-  H..#..U
-  .......
-  ..C....
-  ....G..
-  ..S....
-  `
-  };
-  
-  const bonusPuzzle = {
-    id: "bonus-1",
-    type: "lovebirds",
-    budget: 4,
-    map: `
-  H..A..U
-  .......
-  ..#....
-  .......
-  `
-  };
-  
   if (install) install.hidden = true;
   
   if (!results) {
