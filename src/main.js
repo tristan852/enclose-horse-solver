@@ -1400,32 +1400,29 @@ class PuzzleSolver {
     );
   }
 
-  addMinimumScore(minScore) {
+  addOptimalScore(optimalScore) {
     if (
-      minScore === MIN_SCORE
+      optimalScore === MIN_SCORE
     ) {
       return;
     }
 
-    const trueMinScore =
+    const trueOptimalScore =
       this.puzzle.type ===
       "LOVEBIRDS"
-        ? minScore * 2
-        : minScore;
+        ? optimalScore * 2
+        : optimalScore;
 
-    this.optimalScoreConstraint.SetLb(
-      Math.max(
-        this.optimalScoreConstraint.Lb(),
-        trueMinScore
-      )
-    );
+    this.optimalScoreConstraint.SetLb(trueOptimalScore);
+    this.optimalScoreConstraint.SetUb(trueOptimalScore);
   }
 
   async solve(
-    minScore = MIN_SCORE
+    optimalScore = MIN_SCORE
   ) {
-    this.addMinimumScore(
-      minScore
+    console.log("optimal score: " + optimalScore)
+    this.addOptimalScore(
+      optimalScore
     );
 
     const solver =
@@ -1916,6 +1913,7 @@ async function initiallySolvePuzzle(puzzle, view) {
     "finding the first optimal solution…"
   );
   
+  console.log(puzzle);
   let solution = await puzzleSolver.solve();
 
   if (!solution) {
