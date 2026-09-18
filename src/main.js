@@ -1862,7 +1862,7 @@ function createPuzzleCard(puzzle) {
   status.className = "status";
   status.innerHTML = `
     <div class="score">
-      Optimal score
+      Optimal score:
       <strong>…</strong>
       <small>waiting for main round to be solved…</small>
     </div>
@@ -2001,8 +2001,14 @@ async function initiallySolvePuzzle(puzzle, view) {
         
         renderSolution(view.card, solution);
         
+        setWorking(
+          view.status,
+          "finding next optimal solutions…"
+        );
+        
         for(let i = 0; i < 9; i++) {
           
+          console.log("db: " + optimalScore);
           solution = await puzzleSolver.solve(optimalScore);
           if(!solution) {
             
