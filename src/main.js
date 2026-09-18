@@ -1718,11 +1718,19 @@ function resizeBoard(card, width, height) {
 function renderSolution(card, solution) {
   const board = card.querySelector(".board");
   
+  console.log(solution)
+  
   const a1 = solution.isWall || [];
   const a2 = solution.isEnclosed || [];
   
+  console.log("---");
+  console.log(a1);
+  console.log(a1.flat())
+  
   const walls = new Set(a1.flat());
   const enclosed = new Set(a2.flat());
+
+  console.log(walls);
 
   [...board.children].forEach((cell, index) => {
     
