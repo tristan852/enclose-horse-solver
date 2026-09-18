@@ -1971,12 +1971,6 @@ async function showPuzzle(puzzle) {
 }
 
 async function main() {
-  /*
-   * The current or-tools-wasm MPSolver API requires
-   * initialization before creating the solver.
-   */
-  await initMPSolver();
-
   const params =
     new URLSearchParams(
       window.location.search
@@ -1991,6 +1985,12 @@ async function main() {
     );
     return;
   }
+  
+  /*
+     * The current or-tools-wasm MPSolver API requires
+     * initialization before creating the solver.
+     */
+    await initMPSolver();
 
   let level;
   let bonus = null;
