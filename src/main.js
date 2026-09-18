@@ -1874,43 +1874,30 @@ async function showPuzzle(puzzle) {
   let solutionNumber = 0;
   let exhausted = false;
   
-  
   const puzzleSolver =
     new PuzzleSolver(
       puzzle
     );
 
-  const solution =
-    await puzzleSolver.solve();
+  setWorking(
+    view.status,
+    "finding the first optimal solution…"
+  );
+  
+  currentSolution = await puzzleSolver.solve();
 
-  if (!solution) {
-    console.log(
-      "No feasible solution found."
-    );
-    return;
-  }
 
   console.log(
     "Solution:",
-    solution
+    currentSolution
   );
 
   console.table(
     formatBoard(
       puzzle,
-      solution
+      currentSolution
     )
   );
-
-  setWorking(
-    view.status,
-    "finding the first optimal solution…"
-  );
-
-  // Pretend solving takes a moment.
-  await new Promise(resolve => requestAnimationFrame(resolve));
-
-  currentSolution = solve(puzzle);
 
   if (!currentSolution) {
     view.status.querySelector("small").textContent =
