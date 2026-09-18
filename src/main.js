@@ -1740,10 +1740,6 @@ function renderSolution(card, solution) {
     }
   });
 
-  console.log(solution);
-  console.log(a1);
-  console.log(walls);
-
   [...board.children].forEach((cell, index) => {
     
     cell.classList.toggle("wall", walls.has(index));
