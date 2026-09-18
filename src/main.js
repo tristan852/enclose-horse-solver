@@ -1935,12 +1935,12 @@ async function initiallySolvePuzzle(puzzle, view) {
   solutions.push(solution);
   renderSolution(view.card, solution);
   
+  setWorking(
+    view.status,
+    "finding next optimal solutions…"
+  );
+  
   for(let i = 0; i < 9; i++) {
-    
-    setWorking(
-      view.status,
-      "finding next optimal solution…"
-    );
     
     solution = await puzzleSolver.solve(optimalScore);
     if(!solution) {
@@ -1987,26 +1987,21 @@ async function initiallySolvePuzzle(puzzle, view) {
         solutionIndex--;
         return;
       }
-    
+      
       setWorking(
         view.status,
-        "finding next optimal solution…"
+        "finding next optimal solutions…"
       );
       
       let solution = await puzzleSolver.solve(optimalScore);
       if(solution) {
-      
+        
         puzzleSolver.blacklistSolution(solution);
         solutions.push(solution);
         
         renderSolution(view.card, solution);
         
         for(let i = 0; i < 9; i++) {
-          
-          setWorking(
-            view.status,
-            "finding next optimal solution…"
-          );
           
           solution = await puzzleSolver.solve(optimalScore);
           if(!solution) {
