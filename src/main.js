@@ -13,6 +13,55 @@ const NEIGHBOUR_DIRECTIONS = [
 
 const MIN_SCORE = Number.MIN_SAFE_INTEGER;
 
+/*
+ * or-tools-wasm exposes generic linear constraints as:
+ *
+ *   model.addLinearConstraint(expression, lowerBound, upperBound)
+ *
+ * Keep all constraints going through these helpers. This avoids relying on
+ * addLessOrEqual/addGreaterOrEqual/addEquality methods that are not exposed
+ * by the installed WASM wrapper.
+ *
+ * All variables in this model are small:
+ *
+ *   BoolVar: 0..1
+ *   flow:    0..number of reachable cells
+ *
+ * Therefore these finite bounds are more than sufficient.
+ */
+const CONSTRAINT_MIN = -1_000_000_000;
+const CONSTRAINT_MAX = 1_000_000_000;
+
+function addLessOrEqual(model, expression, upperBound) {
+  model.addLinearConstraint(
+    expression,
+    CONSTRAINT_MIN,
+    upperBound
+  );
+}
+
+function addGreaterOrEqual(model, expression, lowerBound) {
+  model.addLinearConstraint(
+    expression,
+    lowerBound,
+    CONSTRAINT_MAX
+  );
+}
+
+function addEquality(model, expression, value) {
+  model.addLinearConstraint(
+    expression,
+    value,
+    value
+  );
+}
+
+/*
+ * --------------------------------------------------------------------------
+ * Puzzle parsing
+ * --------------------------------------------------------------------------
+ */
+
 const TILE = Object.freeze({
   GRASS: "GRASS",
   WATER: "WATER",
@@ -23,8 +72,14 @@ const TILE = Object.freeze({
 
 function decodeBase64Json(encoded) {
   const binary = atob(encoded);
-  const bytes = Uint8Array.from(binary, c => c.charCodeAt(0));
-  return JSON.parse(new TextDecoder().decode(bytes));
+  const bytes = Uint8Array.from(
+    binary,
+    c => c.charCodeAt(0)
+  );
+
+  return JSON.parse(
+    new TextDecoder().decode(bytes)
+  );
 }
 
 function tileTypeFromChar(char) {
@@ -48,6 +103,7 @@ function tileTypeFromChar(char) {
       console.warn(
         `Unknown puzzle tile '${char}', treating as grass.`
       );
+
       return TILE.GRASS;
   }
 }
@@ -79,13 +135,19 @@ function puzzleTypeFromLevel(level, bonus) {
 
 function parsePuzzle(level, bonus = null) {
   if (!level || typeof level.map !== "string") {
-    throw new Error("Invalid puzzle: missing map.");
+    throw new Error(
+      "Invalid puzzle: missing map."
+    );
   }
 
-  const rows = level.map.replace(/\r/g, "").split("\n");
+  const rows = level.map
+    .replace(/\r/g, "")
+    .split("\n");
 
   if (!rows.length || !rows[0].length) {
-    throw new Error("Invalid puzzle: empty map.");
+    throw new Error(
+      "Invalid puzzle: empty map."
+    );
   }
 
   const width = rows[0].length;
@@ -118,17 +180,23 @@ function parsePuzzle(level, bonus = null) {
   return {
     level,
     bonus,
+
     width,
     height,
 
-    wallBudget: Number(level.budget ?? 0),
+    wallBudget: Number(
+      level.budget ?? 0
+    ),
 
     optimalScore:
       level.optimalScore == null
         ? null
         : Number(level.optimalScore),
 
-    type: puzzleTypeFromLevel(level, bonus),
+    type: puzzleTypeFromLevel(
+      level,
+      bonus
+    ),
 
     tiles,
 
@@ -141,6 +209,12 @@ function parsePuzzle(level, bonus = null) {
     },
   };
 }
+
+/*
+ * --------------------------------------------------------------------------
+ * Tile helpers
+ * --------------------------------------------------------------------------
+ */
 
 function isPortal(type) {
   return type === TILE.PORTAL;
@@ -177,19 +251,14 @@ function tileScore(type) {
 }
 
 /*
- * or-tools-wasm's LinearExpression API uses:
+ * --------------------------------------------------------------------------
+ * Linear expression helpers
+ * --------------------------------------------------------------------------
+ *
+ * or-tools-wasm uses:
  *
  *   expr.plus(other)
  *   expr.times(coefficient)
- *
- * rather than:
- *
- *   expr.add(other)
- *   expr.mul(coefficient)
- *   expr.sub(other)
- *
- * Keep all arithmetic going through these helpers so the rest of the
- * solver cannot accidentally use the wrong API.
  */
 
 function expressionPlus(a, b) {
@@ -197,7 +266,9 @@ function expressionPlus(a, b) {
 }
 
 function expressionMinus(a, b) {
-  return a.plus(b.times(-1));
+  return a.plus(
+    b.times(-1)
+  );
 }
 
 function expressionTimes(a, coefficient) {
@@ -212,18 +283,13 @@ function sumExpressions(expressions) {
   let result = expressions[0];
 
   for (let i = 1; i < expressions.length; i++) {
-    result = expressionPlus(result, expressions[i]);
+    result = expressionPlus(
+      result,
+      expressions[i]
+    );
   }
 
   return result;
-}
-
-function sumOrConstant(expressions, constant = 0) {
-  if (!expressions.length) {
-    return constant;
-  }
-
-  return sumExpressions(expressions);
 }
 
 function boolValue(solver, variable) {
@@ -231,7 +297,8 @@ function boolValue(solver, variable) {
 }
 
 function addAtMostOne(model, a, b) {
-  model.addLessOrEqual(
+  addLessOrEqual(
+    model,
     expressionPlus(a, b),
     1
   );
@@ -243,15 +310,26 @@ function addAtMostOne(model, a, b) {
  * --------------------------------------------------------------------------
  */
 
-function explore(puzzle, x, y, reachable) {
+function explore(
+  puzzle,
+  x,
+  y,
+  reachable
+) {
   if (reachable[x][y]) {
     return;
   }
 
   reachable[x][y] = true;
 
-  const { width, height } = puzzle;
+  const {
+    width,
+    height,
+  } = puzzle;
 
+  /*
+   * Normal four-way movement.
+   */
   for (const [dx, dy] of NEIGHBOUR_DIRECTIONS) {
     const x2 = x + dx;
     const y2 = y + dy;
@@ -265,60 +343,110 @@ function explore(puzzle, x, y, reachable) {
       continue;
     }
 
-    if (isWater(puzzle.tileType(x2, y2))) {
+    if (
+      isWater(
+        puzzle.tileType(x2, y2)
+      )
+    ) {
       continue;
     }
 
-    explore(puzzle, x2, y2, reachable);
+    explore(
+      puzzle,
+      x2,
+      y2,
+      reachable
+    );
   }
 
-  if (!isPortal(puzzle.tileType(x, y))) {
+  /*
+   * Portals connect to another portal.
+   */
+  if (
+    !isPortal(
+      puzzle.tileType(x, y)
+    )
+  ) {
     return;
   }
 
-  let found = false;
-
   for (let x2 = 0; x2 < width; x2++) {
     for (let y2 = 0; y2 < height; y2++) {
-      if (!isPortal(puzzle.tileType(x2, y2))) {
+      if (
+        !isPortal(
+          puzzle.tileType(x2, y2)
+        )
+      ) {
         continue;
       }
 
-      if (x2 === x && y2 === y) {
+      if (
+        x2 === x &&
+        y2 === y
+      ) {
         continue;
       }
 
-      explore(puzzle, x2, y2, reachable);
+      explore(
+        puzzle,
+        x2,
+        y2,
+        reachable
+      );
 
-      found = true;
-      break;
-    }
-
-    if (found) {
-      break;
+      return;
     }
   }
 }
 
 function calculateStaticReachability(puzzle) {
-  const horseReachable = Array.from(
-    { length: puzzle.width },
-    () => Array(puzzle.height).fill(false)
-  );
+  const horseReachable =
+    Array.from(
+      { length: puzzle.width },
+      () =>
+        Array(
+          puzzle.height
+        ).fill(false)
+    );
 
-  const unicornReachable = Array.from(
-    { length: puzzle.width },
-    () => Array(puzzle.height).fill(false)
-  );
+  const unicornReachable =
+    Array.from(
+      { length: puzzle.width },
+      () =>
+        Array(
+          puzzle.height
+        ).fill(false)
+    );
 
-  for (let x = 0; x < puzzle.width; x++) {
-    for (let y = 0; y < puzzle.height; y++) {
-      const type = puzzle.tileType(x, y);
+  for (
+    let x = 0;
+    x < puzzle.width;
+    x++
+  ) {
+    for (
+      let y = 0;
+      y < puzzle.height;
+      y++
+    ) {
+      const type =
+        puzzle.tileType(x, y);
 
       if (isHorse(type)) {
-        explore(puzzle, x, y, horseReachable);
-      } else if (isUnicorn(type)) {
-        explore(puzzle, x, y, unicornReachable);
+        explore(
+          puzzle,
+          x,
+          y,
+          horseReachable
+        );
+      } else if (
+        isUnicorn(type)
+      ) {
+        explore(
+          puzzle,
+          x,
+          y,
+          unicornReachable
+        );
       }
     }
   }
@@ -340,78 +468,118 @@ class PuzzleSolver {
     this.puzzle = puzzle;
     this.model = new CpModel();
 
-    this.wallVariables = Array.from(
-      { length: puzzle.width },
-      () => Array(puzzle.height)
+    this.wallVariables =
+      Array.from(
+        { length: puzzle.width },
+        () =>
+          Array(puzzle.height)
     );
 
-    this.horseReachableVariables = Array.from(
-      { length: puzzle.width },
-      () => Array(puzzle.height)
-    );
+    this.horseReachableVariables =
+      Array.from(
+        { length: puzzle.width },
+        () =>
+          Array(puzzle.height)
+      );
 
-    this.unicornReachableVariables = Array.from(
-      { length: puzzle.width },
-      () => Array(puzzle.height)
-    );
+    this.unicornReachableVariables =
+      Array.from(
+        { length: puzzle.width },
+        () =>
+          Array(puzzle.height)
+      );
 
     this.horseReachable = null;
     this.unicornReachable = null;
 
-    this.flowPreservationExpressions = Array.from(
-      { length: puzzle.width },
-      () => Array(puzzle.height)
-    );
+    this.flowPreservationExpressions =
+      Array.from(
+        { length: puzzle.width },
+        () =>
+          Array(puzzle.height)
+      );
 
-    this.flow2PreservationExpressions = Array.from(
-      { length: puzzle.width },
-      () => Array(puzzle.height)
-    );
+    this.flow2PreservationExpressions =
+      Array.from(
+        { length: puzzle.width },
+        () =>
+          Array(puzzle.height)
+      );
 
     this.initialize();
   }
 
   initialize() {
-    const { puzzle, model } = this;
-    const { width, height, wallBudget } = puzzle;
+    const {
+      puzzle,
+      model,
+    } = this;
+
+    const {
+      width,
+      height,
+      wallBudget,
+    } = puzzle;
 
     const allWalls = [];
 
-    for (let x = 0; x < width; x++) {
-      for (let y = 0; y < height; y++) {
-        const wall = model.newBoolVar(
-          `tileHasWall${x},${y}`
-        );
+    /*
+     * Variables.
+     */
+    for (
+      let x = 0;
+      x < width;
+      x++
+    ) {
+      for (
+        let y = 0;
+        y < height;
+        y++
+      ) {
+        const wall =
+          model.newBoolVar(
+            `tileHasWall${x},${y}`
+          );
 
-        const horse = model.newBoolVar(
-          `tileIsHorseReachable${x},${y}`
-        );
+        const horse =
+          model.newBoolVar(
+            `tileIsHorseReachable${x},${y}`
+          );
 
-        const unicorn = model.newBoolVar(
-          `tileIsUnicornReachable${x},${y}`
-        );
+        const unicorn =
+          model.newBoolVar(
+            `tileIsUnicornReachable${x},${y}`
+          );
 
-        this.wallVariables[x][y] = wall;
-        this.horseReachableVariables[x][y] = horse;
-        this.unicornReachableVariables[x][y] = unicorn;
+        this.wallVariables[x][y] =
+          wall;
+
+        this.horseReachableVariables[x][y] =
+          horse;
+
+        this.unicornReachableVariables[x][y] =
+          unicorn;
 
         allWalls.push(wall);
       }
     }
 
     /*
-     * Do not seed reduce() with allWalls[0].
-     *
-     * The old code effectively started with the first variable and then
-     * added the first variable again.
+     * Number of walls <= budget.
      */
-    model.addLessOrEqual(
+    addLessOrEqual(
+      model,
       sumExpressions(allWalls),
       wallBudget
     );
 
+    /*
+     * Static connectivity.
+     */
     const staticReachability =
-      calculateStaticReachability(puzzle);
+      calculateStaticReachability(
+        puzzle
+      );
 
     this.horseReachable =
       staticReachability.horseReachable;
@@ -419,23 +587,55 @@ class PuzzleSolver {
     this.unicornReachable =
       staticReachability.unicornReachable;
 
-    for (let x = 0; x < width; x++) {
-      for (let y = 0; y < height; y++) {
-        this.initializeCell(x, y);
+    /*
+     * Per-cell rules.
+     */
+    for (
+      let x = 0;
+      x < width;
+      x++
+    ) {
+      for (
+        let y = 0;
+        y < height;
+        y++
+      ) {
+        this.initializeCell(
+          x,
+          y
+        );
       }
     }
 
-    for (let x = 0; x < width; x++) {
-      for (let y = 0; y < height; y++) {
-        if (!this.horseReachable[x][y]) {
-          model.addEquality(
+    /*
+     * Cells that cannot possibly be reached
+     * are forced to false.
+     */
+    for (
+      let x = 0;
+      x < width;
+      x++
+    ) {
+      for (
+        let y = 0;
+        y < height;
+        y++
+      ) {
+        if (
+          !this.horseReachable[x][y]
+        ) {
+          addEquality(
+            model,
             this.horseReachableVariables[x][y],
             0
           );
         }
 
-        if (!this.unicornReachable[x][y]) {
-          model.addEquality(
+        if (
+          !this.unicornReachable[x][y]
+        ) {
+          addEquality(
+            model,
             this.unicornReachableVariables[x][y],
             0
           );
@@ -445,7 +645,8 @@ class PuzzleSolver {
           !this.horseReachable[x][y] &&
           !this.unicornReachable[x][y]
         ) {
-          model.addEquality(
+          addEquality(
+            model,
             this.wallVariables[x][y],
             0
           );
@@ -453,24 +654,40 @@ class PuzzleSolver {
       }
     }
 
-    const maxFlow = Math.max(
-      0,
-      this.horseReachable
-        .flat()
-        .filter(Boolean)
-        .length - 1
-    );
+    /*
+     * Flow bounds.
+     */
+    const maxFlow =
+      Math.max(
+        0,
+        this.horseReachable
+          .flat()
+          .filter(Boolean)
+          .length - 1
+      );
 
-    const maxFlow2 = Math.max(
-      0,
-      this.unicornReachable
-        .flat()
-        .filter(Boolean)
-        .length - 1
-    );
+    const maxFlow2 =
+      Math.max(
+        0,
+        this.unicornReachable
+          .flat()
+          .filter(Boolean)
+          .length - 1
+      );
 
-    for (let x = 0; x < width; x++) {
-      for (let y = 0; y < height; y++) {
+    /*
+     * Flow constraints.
+     */
+    for (
+      let x = 0;
+      x < width;
+      x++
+    ) {
+      for (
+        let y = 0;
+        y < height;
+        y++
+      ) {
         this.initializeFlow(
           x,
           y,
@@ -480,13 +697,25 @@ class PuzzleSolver {
       }
     }
 
+    /*
+     * Objective.
+     */
     const objectiveTerms = [];
 
-    for (let x = 0; x < width; x++) {
-      for (let y = 0; y < height; y++) {
-        const score = tileScore(
-          puzzle.tileType(x, y)
-        );
+    for (
+      let x = 0;
+      x < width;
+      x++
+    ) {
+      for (
+        let y = 0;
+        y < height;
+        y++
+      ) {
+        const score =
+          tileScore(
+            puzzle.tileType(x, y)
+          );
 
         if (score !== 0) {
           objectiveTerms.push(
@@ -504,7 +733,10 @@ class PuzzleSolver {
           );
         }
 
-        if (puzzle.type === "COSTLY_WALLS") {
+        if (
+          puzzle.type ===
+          "COSTLY_WALLS"
+        ) {
           objectiveTerms.push(
             expressionTimes(
               this.wallVariables[x][y],
@@ -516,65 +748,153 @@ class PuzzleSolver {
     }
 
     model.maximize(
-      sumExpressions(objectiveTerms)
+      sumExpressions(
+        objectiveTerms
+      )
     );
   }
 
   initializeCell(x, y) {
-    const { puzzle, model } = this;
+    const {
+      puzzle,
+      model,
+    } = this;
 
-    const type = puzzle.tileType(x, y);
+    const type =
+      puzzle.tileType(x, y);
 
-    const wall = this.wallVariables[x][y];
+    const wall =
+      this.wallVariables[x][y];
+
     const horse =
       this.horseReachableVariables[x][y];
+
     const unicorn =
       this.unicornReachableVariables[x][y];
 
-    if (puzzle.type === "LOVEBIRDS") {
-      model.addEquality(horse, unicorn);
-    } else if (
-      puzzle.type === "LOVERS_QUARREL"
+    /*
+     * Bonus-mode rules.
+     */
+    if (
+      puzzle.type ===
+      "LOVEBIRDS"
     ) {
-      model.addLessOrEqual(
-        expressionPlus(horse, unicorn),
+      addEquality(
+        model,
+        expressionMinus(
+          horse,
+          unicorn
+        ),
+        0
+      );
+    } else if (
+      puzzle.type ===
+      "LOVERS_QUARREL"
+    ) {
+      addLessOrEqual(
+        model,
+        expressionPlus(
+          horse,
+          unicorn
+        ),
         1
       );
     } else {
-      model.addEquality(unicorn, 0);
+      addEquality(
+        model,
+        unicorn,
+        0
+      );
     }
 
-    addAtMostOne(model, wall, horse);
-    addAtMostOne(model, wall, unicorn);
+    /*
+     * A cell cannot simultaneously be:
+     *
+     *   wall + horse
+     *   wall + unicorn
+     */
+    addAtMostOne(
+      model,
+      wall,
+      horse
+    );
 
+    addAtMostOne(
+      model,
+      wall,
+      unicorn
+    );
+
+    /*
+     * The animal's starting cell must be reachable.
+     */
     if (isHorse(type)) {
-      model.addEquality(horse, 1);
+      addEquality(
+        model,
+        horse,
+        1
+      );
     }
 
     if (isUnicorn(type)) {
-      model.addEquality(unicorn, 1);
+      addEquality(
+        model,
+        unicorn,
+        1
+      );
     }
 
+    /*
+     * Only grass may become a wall.
+     */
     if (!isGrass(type)) {
-      model.addEquality(wall, 0);
+      addEquality(
+        model,
+        wall,
+        0
+      );
     }
 
+    /*
+     * Edge/water cells cannot contain reachable animals.
+     */
     const isOnEdge =
       x === 0 ||
       x === puzzle.width - 1 ||
       y === 0 ||
       y === puzzle.height - 1;
 
-    if (isWater(type) || isOnEdge) {
-      model.addEquality(horse, 0);
-      model.addEquality(unicorn, 0);
+    if (
+      isWater(type) ||
+      isOnEdge
+    ) {
+      addEquality(
+        model,
+        horse,
+        0
+      );
+
+      addEquality(
+        model,
+        unicorn,
+        0
+      );
     }
   }
 
-  initializeFlow(x, y, maxFlow, maxFlow2) {
-    const { puzzle, model } = this;
+  initializeFlow(
+    x,
+    y,
+    maxFlow,
+    maxFlow2
+  ) {
+    const {
+      puzzle,
+      model,
+    } = this;
 
-    const type = puzzle.tileType(x, y);
+    const type =
+      puzzle.tileType(x, y);
 
     const horse =
       this.horseReachableVariables[x][y];
@@ -587,10 +907,26 @@ class PuzzleSolver {
 
     /*
      * Source flow expression.
+     *
+     * At the source:
+     *
+     *   sum(reachable) - outgoing flow = 1
+     *
+     * At every other reachable node:
+     *
+     *   -reachable - outgoing + incoming = 0
      */
     if (isHorse(type)) {
-      for (let x2 = 0; x2 < puzzle.width; x2++) {
-        for (let y2 = 0; y2 < puzzle.height; y2++) {
+      for (
+        let x2 = 0;
+        x2 < puzzle.width;
+        x2++
+      ) {
+        for (
+          let y2 = 0;
+          y2 < puzzle.height;
+          y2++
+        ) {
           horseTerms.push(
             this.horseReachableVariables[x2][y2]
           );
@@ -598,13 +934,24 @@ class PuzzleSolver {
       }
     } else {
       horseTerms.push(
-        expressionTimes(horse, -1)
+        expressionTimes(
+          horse,
+          -1
+        )
       );
     }
 
     if (isUnicorn(type)) {
-      for (let x2 = 0; x2 < puzzle.width; x2++) {
-        for (let y2 = 0; y2 < puzzle.height; y2++) {
+      for (
+        let x2 = 0;
+        x2 < puzzle.width;
+        x2++
+      ) {
+        for (
+          let y2 = 0;
+          y2 < puzzle.height;
+          y2++
+        ) {
           unicornTerms.push(
             this.unicornReachableVariables[x2][y2]
           );
@@ -612,28 +959,44 @@ class PuzzleSolver {
       }
     } else {
       unicornTerms.push(
-        expressionTimes(unicorn, -1)
+        expressionTimes(
+          unicorn,
+          -1
+        )
       );
     }
 
     this.flowPreservationExpressions[x][y] =
-      sumExpressions(horseTerms);
+      sumExpressions(
+        horseTerms
+      );
 
     this.flow2PreservationExpressions[x][y] =
-      sumExpressions(unicornTerms);
+      sumExpressions(
+        unicornTerms
+      );
 
     if (isWater(type)) {
       return;
     }
 
-    const hr = this.horseReachable[x][y];
-    const ur = this.unicornReachable[x][y];
+    const hr =
+      this.horseReachable[x][y];
+
+    const ur =
+      this.unicornReachable[x][y];
 
     if (!hr && !ur) {
       return;
     }
 
-    for (const [dx, dy] of NEIGHBOUR_DIRECTIONS) {
+    /*
+     * Normal neighbour connections.
+     */
+    for (
+      const [dx, dy]
+      of NEIGHBOUR_DIRECTIONS
+    ) {
       const x2 = x + dx;
       const y2 = y + dy;
 
@@ -660,32 +1023,43 @@ class PuzzleSolver {
       const neighbourWall =
         this.wallVariables[x2][y2];
 
+      /*
+       * Horse reachability:
+       *
+       * horse[x,y]
+       *   - wall[x2,y2]
+       *   - horse[x2,y2]
+       * <= 0
+       */
       if (hr) {
-        /*
-         * horse[x,y] - wall[x2,y2] - horse[x2,y2] <= 0
-         */
         const neighbourTerms = [
           horse,
+
           expressionTimes(
             neighbourWall,
             -1
           ),
+
           expressionTimes(
             this.horseReachableVariables[x2][y2],
             -1
           ),
         ];
 
-        model.addLessOrEqual(
-          sumExpressions(neighbourTerms),
+        addLessOrEqual(
+          model,
+          sumExpressions(
+            neighbourTerms
+          ),
           0
         );
 
-        const flow = model.newIntVar(
-          0,
-          maxFlow,
-          `flow${x},${y},${x2},${y2}`
-        );
+        const flow =
+          model.newIntVar(
+            0,
+            maxFlow,
+            `flow${x},${y},${x2},${y2}`
+          );
 
         this.flowPreservationExpressions[x][y] =
           expressionMinus(
@@ -702,7 +1076,8 @@ class PuzzleSolver {
         /*
          * flow + maxFlow * neighbourWall <= maxFlow
          */
-        model.addLessOrEqual(
+        addLessOrEqual(
+          model,
           expressionPlus(
             flow,
             expressionTimes(
@@ -716,7 +1091,8 @@ class PuzzleSolver {
         /*
          * flow + maxFlow * ownWall <= maxFlow
          */
-        model.addLessOrEqual(
+        addLessOrEqual(
+          model,
           expressionPlus(
             flow,
             expressionTimes(
@@ -728,29 +1104,38 @@ class PuzzleSolver {
         );
       }
 
+      /*
+       * Unicorn reachability.
+       */
       if (ur) {
         const neighbourTerms = [
           unicorn,
+
           expressionTimes(
             neighbourWall,
             -1
           ),
+
           expressionTimes(
             this.unicornReachableVariables[x2][y2],
             -1
           ),
         ];
 
-        model.addLessOrEqual(
-          sumExpressions(neighbourTerms),
+        addLessOrEqual(
+          model,
+          sumExpressions(
+            neighbourTerms
+          ),
           0
         );
 
-        const flow = model.newIntVar(
-          0,
-          maxFlow2,
-          `flow2${x},${y},${x2},${y2}`
-        );
+        const flow =
+          model.newIntVar(
+            0,
+            maxFlow2,
+            `flow2${x},${y},${x2},${y2}`
+          );
 
         this.flow2PreservationExpressions[x][y] =
           expressionMinus(
@@ -764,7 +1149,11 @@ class PuzzleSolver {
             flow
           );
 
-        model.addLessOrEqual(
+        /*
+         * flow + maxFlow2 * neighbourWall <= maxFlow2
+         */
+        addLessOrEqual(
+          model,
           expressionPlus(
             flow,
             expressionTimes(
@@ -775,7 +1164,11 @@ class PuzzleSolver {
           maxFlow2
         );
 
-        model.addLessOrEqual(
+        /*
+         * flow + maxFlow2 * ownWall <= maxFlow2
+         */
+        addLessOrEqual(
+          model,
           expressionPlus(
             flow,
             expressionTimes(
@@ -794,15 +1187,27 @@ class PuzzleSolver {
     if (isPortal(type)) {
       let found = false;
 
-      for (let x2 = 0; x2 < puzzle.width; x2++) {
-        for (let y2 = 0; y2 < puzzle.height; y2++) {
+      for (
+        let x2 = 0;
+        x2 < puzzle.width;
+        x2++
+      ) {
+        for (
+          let y2 = 0;
+          y2 < puzzle.height;
+          y2++
+        ) {
           if (
-            puzzle.tileType(x2, y2) !== type
+            puzzle.tileType(x2, y2) !==
+            type
           ) {
             continue;
           }
 
-          if (x2 === x && y2 === y) {
+          if (
+            x2 === x &&
+            y2 === y
+          ) {
             continue;
           }
 
@@ -811,10 +1216,15 @@ class PuzzleSolver {
             Math.abs(y2 - y);
 
           if (distance > 1) {
+            /*
+             * Horse portal connection.
+             */
             if (hr) {
-              model.addLessOrEqual(
+              addLessOrEqual(
+                model,
                 sumExpressions([
                   horse,
+
                   expressionTimes(
                     this.horseReachableVariables[x2][y2],
                     -1
@@ -843,10 +1253,15 @@ class PuzzleSolver {
                 );
             }
 
+            /*
+             * Unicorn portal connection.
+             */
             if (ur) {
-              model.addLessOrEqual(
+              addLessOrEqual(
+                model,
                 sumExpressions([
                   unicorn,
+
                   expressionTimes(
                     this.unicornReachableVariables[x2][y2],
                     -1
@@ -886,31 +1301,53 @@ class PuzzleSolver {
       }
     }
 
-    model.addEquality(
+    /*
+     * Flow conservation.
+     */
+    addEquality(
+      model,
       this.flowPreservationExpressions[x][y],
       isHorse(type) ? 1 : 0
     );
 
-    model.addEquality(
+    addEquality(
+      model,
       this.flow2PreservationExpressions[x][y],
       isUnicorn(type) ? 1 : 0
     );
   }
 
+  /*
+   * Prevent the exact same wall configuration from being returned.
+   */
   blacklistSolution(solution) {
-    const { puzzle, model } = this;
+    const {
+      puzzle,
+      model,
+    } = this;
 
     let wallsUsed = 0;
     const terms = [];
 
-    for (let x = 0; x < puzzle.width; x++) {
-      for (let y = 0; y < puzzle.height; y++) {
+    for (
+      let x = 0;
+      x < puzzle.width;
+      x++
+    ) {
+      for (
+        let y = 0;
+        y < puzzle.height;
+        y++
+      ) {
         const wall =
           solution.isWall[x][y];
 
         if (wall) {
           wallsUsed++;
 
+          /*
+           * If this wall was true, contribute -1.
+           */
           terms.push(
             expressionTimes(
               this.wallVariables[x][y],
@@ -918,6 +1355,9 @@ class PuzzleSolver {
             )
           );
         } else {
+          /*
+           * If this wall was false, contribute +1.
+           */
           terms.push(
             this.wallVariables[x][y]
           );
@@ -925,21 +1365,45 @@ class PuzzleSolver {
       }
     }
 
-    model.addGreaterOrEqual(
+    /*
+     * For the exact previous solution:
+     *
+     *   sum(terms) = -wallsUsed
+     *
+     * Requiring:
+     *
+     *   sum(terms) >= 1 - wallsUsed
+     *
+     * guarantees at least one wall variable changes.
+     */
+    addGreaterOrEqual(
+      model,
       sumExpressions(terms),
       1 - wallsUsed
     );
   }
 
   buildScoreExpression() {
-    const { puzzle } = this;
+    const {
+      puzzle,
+    } = this;
+
     const terms = [];
 
-    for (let x = 0; x < puzzle.width; x++) {
-      for (let y = 0; y < puzzle.height; y++) {
-        const score = tileScore(
-          puzzle.tileType(x, y)
-        );
+    for (
+      let x = 0;
+      x < puzzle.width;
+      x++
+    ) {
+      for (
+        let y = 0;
+        y < puzzle.height;
+        y++
+      ) {
+        const score =
+          tileScore(
+            puzzle.tileType(x, y)
+          );
 
         if (score !== 0) {
           terms.push(
@@ -958,7 +1422,8 @@ class PuzzleSolver {
         }
 
         if (
-          puzzle.type === "COSTLY_WALLS"
+          puzzle.type ===
+          "COSTLY_WALLS"
         ) {
           terms.push(
             expressionTimes(
@@ -970,42 +1435,58 @@ class PuzzleSolver {
       }
     }
 
-    return sumExpressions(terms);
+    return sumExpressions(
+      terms
+    );
   }
 
-  async solve(minScore = MIN_SCORE) {
-    const { puzzle, model } = this;
+  async solve(
+    minScore = MIN_SCORE
+  ) {
+    const {
+      puzzle,
+      model,
+    } = this;
 
-    const solver = new CpSolver();
+    const solver =
+      new CpSolver();
 
     /*
-     * Add the score lower bound only when requested.
-     *
-     * This is done before solve(), because CP-SAT constraints cannot be
-     * modified after solving.
+     * Optional minimum score.
      */
-    if (minScore !== MIN_SCORE) {
+    if (
+      minScore !== MIN_SCORE
+    ) {
       const trueMinScore =
-        puzzle.type === "LOVEBIRDS"
+        puzzle.type ===
+        "LOVEBIRDS"
           ? minScore * 2
           : minScore;
 
-      model.addGreaterOrEqual(
+      addGreaterOrEqual(
+        model,
         this.buildScoreExpression(),
         trueMinScore
       );
     }
 
-    const status = await solver.solve(
-      model,
-      {
-        maxTimeInSeconds: 120,
-        numSearchWorkers: 1,
-      }
+    console.log(
+      "Starting CP-SAT solve..."
     );
 
+    const status =
+      await solver.solve(
+        model,
+        {
+          maxTimeInSeconds: 120,
+          numSearchWorkers: 1,
+        }
+      );
+
     const statusName =
-      solver.statusName(status);
+      solver.statusName(
+        status
+      );
 
     console.log(
       "Solver status:",
@@ -1013,43 +1494,66 @@ class PuzzleSolver {
     );
 
     if (
-      statusName !== "OPTIMAL" &&
-      statusName !== "FEASIBLE"
+      statusName !==
+        "OPTIMAL" &&
+      statusName !==
+        "FEASIBLE"
     ) {
       return null;
     }
 
-    const isWall = Array.from(
-      { length: puzzle.width },
-      () => Array(puzzle.height).fill(false)
-    );
+    const isWall =
+      Array.from(
+        { length: puzzle.width },
+        () =>
+          Array(
+            puzzle.height
+          ).fill(false)
+      );
 
-    const isEnclosed = Array.from(
-      { length: puzzle.width },
-      () => Array(puzzle.height).fill(false)
-    );
+    const isEnclosed =
+      Array.from(
+        { length: puzzle.width },
+        () =>
+          Array(
+            puzzle.height
+          ).fill(false)
+      );
 
     let wallCount = 0;
     let score = 0;
 
-    for (let x = 0; x < puzzle.width; x++) {
-      for (let y = 0; y < puzzle.height; y++) {
-        const wall = boolValue(
-          solver,
-          this.wallVariables[x][y]
-        );
+    for (
+      let x = 0;
+      x < puzzle.width;
+      x++
+    ) {
+      for (
+        let y = 0;
+        y < puzzle.height;
+        y++
+      ) {
+        const wall =
+          boolValue(
+            solver,
+            this.wallVariables[x][y]
+          );
 
-        const horse = boolValue(
-          solver,
-          this.horseReachableVariables[x][y]
-        );
+        const horse =
+          boolValue(
+            solver,
+            this.horseReachableVariables[x][y]
+          );
 
-        const unicorn = boolValue(
-          solver,
-          this.unicornReachableVariables[x][y]
-        );
+        const unicorn =
+          boolValue(
+            solver,
+            this.unicornReachableVariables[x][y]
+          );
 
-        isWall[x][y] = wall;
+        isWall[x][y] =
+          wall;
+
         isEnclosed[x][y] =
           horse || unicorn;
 
@@ -1057,7 +1561,9 @@ class PuzzleSolver {
           wallCount++;
         }
 
-        if (isEnclosed[x][y]) {
+        if (
+          isEnclosed[x][y]
+        ) {
           score += tileScore(
             puzzle.tileType(x, y)
           );
@@ -1066,16 +1572,19 @@ class PuzzleSolver {
     }
 
     if (
-      puzzle.type === "COSTLY_WALLS"
+      puzzle.type ===
+      "COSTLY_WALLS"
     ) {
-      score -= 6 * wallCount;
+      score -=
+        6 * wallCount;
     }
 
     let objectiveValue =
       solver.objectiveValue();
 
     if (
-      puzzle.type === "LOVEBIRDS"
+      puzzle.type ===
+      "LOVEBIRDS"
     ) {
       objectiveValue *= 0.5;
     }
@@ -1134,14 +1643,18 @@ async function main() {
 
   try {
     level =
-      decodeBase64Json(levelEncoded);
+      decodeBase64Json(
+        levelEncoded
+      );
 
     const bonusEncoded =
       params.get("bonus");
 
     if (bonusEncoded) {
       bonus =
-        decodeBase64Json(bonusEncoded);
+        decodeBase64Json(
+          bonusEncoded
+        );
     }
   } catch (error) {
     console.error(
@@ -1165,7 +1678,10 @@ async function main() {
   );
 
   const puzzle =
-    parsePuzzle(level, bonus);
+    parsePuzzle(
+      level,
+      bonus
+    );
 
   console.log(
     "Parsed puzzle:",
@@ -1186,8 +1702,20 @@ async function main() {
     puzzle.wallBudget
   );
 
+  /*
+   * Useful API diagnostic. If this prints false, the package version is
+   * still not the API this solver expects.
+   */
+  console.log(
+    "CpModel.addLinearConstraint:",
+    typeof new CpModel()
+      .addLinearConstraint
+  );
+
   const solver =
-    new PuzzleSolver(puzzle);
+    new PuzzleSolver(
+      puzzle
+    );
 
   const solution =
     await solver.solve();
@@ -1206,10 +1734,16 @@ async function main() {
 
   console.table(
     Array.from(
-      { length: puzzle.height },
+      {
+        length:
+          puzzle.height,
+      },
       (_, y) =>
         Array.from(
-          { length: puzzle.width },
+          {
+            length:
+              puzzle.width,
+          },
           (_, x) => {
             if (
               solution.isWall[x][y]
@@ -1217,16 +1751,20 @@ async function main() {
               return "#";
             }
 
-            return puzzle.tile(
-              x,
-              y
-            ).char;
+            return puzzle
+              .tile(x, y)
+              .char;
           }
         ).join("")
     )
   );
 }
 
-main().catch(error => {
-  console.error(error);
-});
+main().catch(
+  error => {
+    console.error(
+      "Solver failed:",
+      error
+    );
+  }
+);
