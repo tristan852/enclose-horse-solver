@@ -1716,6 +1716,8 @@ function resizeBoard(card, width, height) {
 }
 
 function renderSolution(card, solution) {
+  console.log("render solution: " + solution)
+
   const board = card.querySelector(".board");
   const walls = new Set(solution.walls || []);
   const enclosed = new Set(solution.enclosed || []);
@@ -2033,8 +2035,8 @@ async function main() {
       true
     );
 
-  logPuzzle(puzzle)
-  logPuzzle(bonusPuzzle);
+  // logPuzzle(puzzle)
+  // logPuzzle(bonusPuzzle);
 
   /*
    * Verify SCIP is actually linked into the WASM build.
@@ -2066,6 +2068,10 @@ async function main() {
   }
   
   results.hidden = false;
+  
+  // first show both puzzles
+  
+  // then solve them sequentially
   
   try {
     await showPuzzle(puzzle);
