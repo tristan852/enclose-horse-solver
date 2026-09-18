@@ -1718,8 +1718,16 @@ function resizeBoard(card, width, height) {
 function renderSolution(card, solution) {
   const board = card.querySelector(".board");
   
-  const a1 = (solution.isWall || []).flat().reverse();
-  const a2 = (solution.isEnclosed || []).flat().reverse();
+  function interleaveArrays(arrays) {
+    if (arrays.length === 0) return [];
+  
+    return arrays[0]
+      .map((_, i) => arrays.map(array => array[i]))
+      .flat();
+  }
+  
+  const a1 = interleaveArrays(solution.isWall || []);
+  const a2 = interleaveArrays(solution.isEnclosed || []);
   
   const walls = new Set();
   const enclosed = new Set();
