@@ -1718,8 +1718,8 @@ function resizeBoard(card, width, height) {
 function renderSolution(card, solution) {
   const board = card.querySelector(".board");
   
-  const a1 = (solution.isWall || []).flat();
-  const a2 = (solution.isEnclosed || []).flat();
+  const a1 = (solution.isWall || []).flat().reverse();
+  const a2 = (solution.isEnclosed || []).flat().reverse();
   
   const walls = new Set();
   const enclosed = new Set();
@@ -1736,7 +1736,8 @@ function renderSolution(card, solution) {
     }
   });
 
-  console.log(solution)
+  console.log(solution);
+  console.log(a1);
   console.log(walls);
 
   [...board.children].forEach((cell, index) => {
