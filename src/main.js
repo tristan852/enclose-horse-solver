@@ -15,23 +15,25 @@ const NEIGHBOUR_DIRECTIONS = [
 
 const MIN_SCORE = Number.MIN_SAFE_INTEGER;
 
+/*
+ * These correspond to the fixed tile types from PuzzleTileType.java.
+ *
+ * Portals are NOT a single tile type here. A portal is represented by its
+ * actual character, because only portals with matching characters connect.
+ */
 const TILE = Object.freeze({
   GRASS: "GRASS",
   WATER: "WATER",
   HORSE: "HORSE",
   UNICORN: "UNICORN",
+  CHERRIES: "CHERRIES",
+  GOLDEN_APPLE: "GOLDEN_APPLE",
+  BEE_SWARM: "BEE_SWARM",
   PORTAL: "PORTAL",
 });
 
 /*
  * CP-SAT integer domains are finite.
- *
- * The actual values in this model are tiny:
- *
- *   bool = 0..1
- *   flow = 0..number of reachable cells
- *
- * These bounds are therefore deliberately generous.
  */
 const CONSTRAINT_MIN = -1_000_000_000;
 const CONSTRAINT_MAX = 1_000_000_000;
@@ -41,12 +43,6 @@ const CONSTRAINT_MAX = 1_000_000_000;
  * --------------------------------------------------------------------------
  * CP-SAT constraint helpers
  * --------------------------------------------------------------------------
- *
- * The installed or-tools-wasm wrapper exposes:
- *
- *   model.addLinearConstraint(expression, lowerBound, upperBound)
- *
- * rather than addLessOrEqual/addGreaterOrEqual.
  */
 
 function addLessOrEqual(model, expression, upperBound) {
@@ -97,17 +93,8 @@ function addEquality(model, expression, value) {
  * Linear-expression helpers
  * --------------------------------------------------------------------------
  *
- * Important:
- *
- * null represents the constant zero.
- *
- * This lets us build expressions incrementally without ever doing:
- *
- *   undefined.plus(...)
- *
- * or:
- *
- *   0.plus(...)
+ * null represents mathematical zero.
+ * --------------------------------------------------------------------------
  */
 
 function expressionPlus(a, b) {
@@ -187,6 +174,34 @@ function decodeBase64Json(encoded) {
   );
 }
 
+
+/*
+ * --------------------------------------------------------------------------
+ * Tile types
+ * --------------------------------------------------------------------------
+ *
+ * This mirrors PuzzleTileType.type(char) from Java:
+ *
+ *   '.' -> GRASS
+ *   '~' -> WATER
+ *   'H' -> HORSE
+ *   'U' -> UNICORN
+ *   'C' -> CHERRIES
+ *   'G' -> GOLDEN_APPLE
+ *   'S' -> BEE_SWARM
+ *
+ * Every other character is a portal.
+ *
+ * Crucially, the portal character is retained:
+ *
+ *   A -> portal "A"
+ *   A -> portal "A"
+ *   B -> portal "B"
+ *
+ * Therefore A connects to A, but not B.
+ * --------------------------------------------------------------------------
+ */
+
 function tileTypeFromChar(char) {
   switch (char) {
     case ".":
@@ -202,14 +217,32 @@ function tileTypeFromChar(char) {
       return TILE.UNICORN;
 
     case "C":
-      return TILE.PORTAL;
+      return TILE.CHERRIES;
+
+    case "G":
+      return TILE.GOLDEN_APPLE;
+
+    case "S":
+      return TILE.BEE_SWARM;
 
     default:
-      console.warn(
-        `Unknown puzzle tile '${char}', treating as grass.`
-      );
+      return TILE.PORTAL;
+  }
+}
 
-      return TILE.GRASS;
+function isKnownTileCharacter(char) {
+  switch (char) {
+    case ".":
+    case "~":
+    case "H":
+    case "U":
+    case "C":
+    case "G":
+    case "S":
+      return true;
+
+    default:
+      return false;
   }
 }
 
@@ -278,12 +311,25 @@ function parsePuzzle(level, bonus = null) {
         { length: height },
         (_, y) => {
           const char = rows[y][x];
+          const type = tileTypeFromChar(char);
 
           return {
             x,
             y,
             char,
-            type: tileTypeFromChar(char),
+            type,
+
+            /*
+             * Java's PuzzleTileType does not expose a separate portal
+             * character, but type(char) preserves the character in the
+             * dynamically-created portal instance.
+             *
+             * null for non-portals.
+             */
+            portalCharacter:
+              type === TILE.PORTAL
+                ? char
+                : null,
           };
         }
       )
@@ -319,6 +365,29 @@ function parsePuzzle(level, bonus = null) {
     tile(x, y) {
       return tiles[x][y];
     },
+
+    /*
+     * Return the portal character at a cell, or null if this isn't a
+     * portal.
+     */
+    portalCharacter(x, y) {
+      return tiles[x][y].portalCharacter;
+    },
+
+    /*
+     * Two cells are matching portals iff both are portals and their
+     * characters are equal.
+     */
+    areMatchingPortals(x1, y1, x2, y2) {
+      const a = tiles[x1][y1];
+      const b = tiles[x2][y2];
+
+      return (
+        a.type === TILE.PORTAL &&
+        b.type === TILE.PORTAL &&
+        a.portalCharacter === b.portalCharacter
+      );
+    },
   };
 }
 
@@ -352,12 +421,29 @@ function isGrass(type) {
 function tileScore(type) {
   switch (type) {
     case TILE.GRASS:
-    case TILE.HORSE:
-    case TILE.UNICORN:
-    case TILE.PORTAL:
       return 1;
 
     case TILE.WATER:
+      return 0;
+
+    case TILE.HORSE:
+      return 1;
+
+    case TILE.UNICORN:
+      return 1;
+
+    case TILE.PORTAL:
+      return 1;
+
+    case TILE.CHERRIES:
+      return 4;
+
+    case TILE.GOLDEN_APPLE:
+      return 11;
+
+    case TILE.BEE_SWARM:
+      return -4;
+
     default:
       return 0;
   }
@@ -369,10 +455,19 @@ function tileScore(type) {
  * Static reachability
  * --------------------------------------------------------------------------
  *
- * This determines which cells are even potentially reachable before walls
- * are considered.
+ * Determines which cells are potentially reachable before walls are
+ * considered.
  *
- * Portals are treated as a connection between portal cells.
+ * Normal movement:
+ *   - four-way movement
+ *   - water is impassable
+ *
+ * Portal movement:
+ *   - a portal only connects to portals with the SAME character
+ *
+ * This mirrors the Java behavior where each dynamically-created portal
+ * PuzzleTileType retains its character.
+ * --------------------------------------------------------------------------
  */
 
 function explore(
@@ -427,8 +522,7 @@ function explore(
   /*
    * Portal movement.
    *
-   * Connect this portal to every other portal. Since explore() marks
-   * visited cells, this is safe even if there are multiple portals.
+   * Only portals with the same character are connected.
    */
   if (
     !isPortal(
@@ -437,6 +531,9 @@ function explore(
   ) {
     return;
   }
+
+  const portalCharacter =
+    puzzle.portalCharacter(x, y);
 
   for (let x2 = 0; x2 < width; x2++) {
     for (let y2 = 0; y2 < height; y2++) {
@@ -448,9 +545,8 @@ function explore(
       }
 
       if (
-        !isPortal(
-          puzzle.tileType(x2, y2)
-        )
+        puzzle.portalCharacter(x2, y2) !==
+        portalCharacter
       ) {
         continue;
       }
@@ -565,9 +661,7 @@ class PuzzleSolver {
     this.unicornReachable = null;
 
     /*
-     * These are initialized to null deliberately.
-     *
-     * null means mathematical zero.
+     * null represents mathematical zero.
      */
     this.flowPreservationExpressions =
       Array.from(
@@ -585,6 +679,7 @@ class PuzzleSolver {
 
     this.initialize();
   }
+
 
   /*
    * ------------------------------------------------------------------------
@@ -606,7 +701,7 @@ class PuzzleSolver {
 
     /*
      * --------------------------------------------------------------
-     * 1. Create all variables first.
+     * 1. Create all variables.
      * --------------------------------------------------------------
      */
 
@@ -738,10 +833,6 @@ class PuzzleSolver {
           );
         }
 
-        /*
-         * If neither animal can ever reach this cell, it doesn't need
-         * to be a wall.
-         */
         if (
           !this.horseReachable[x][y] &&
           !this.unicornReachable[x][y]
@@ -757,7 +848,7 @@ class PuzzleSolver {
 
     /*
      * --------------------------------------------------------------
-     * 6. Calculate safe flow bounds.
+     * 6. Safe flow bounds.
      * --------------------------------------------------------------
      */
 
@@ -781,12 +872,7 @@ class PuzzleSolver {
 
     /*
      * --------------------------------------------------------------
-     * 7. IMPORTANT:
-     *
-     * First initialize EVERY flow expression.
-     *
-     * We must not modify a neighbour's expression before that
-     * neighbour has received its base expression.
+     * 7. Initialize EVERY flow expression first.
      * --------------------------------------------------------------
      */
 
@@ -809,7 +895,7 @@ class PuzzleSolver {
 
     /*
      * --------------------------------------------------------------
-     * 8. Now add all flow edges.
+     * 8. Add all flow edges.
      * --------------------------------------------------------------
      */
 
@@ -834,7 +920,7 @@ class PuzzleSolver {
 
     /*
      * --------------------------------------------------------------
-     * 9. Finally add flow conservation.
+     * 9. Flow conservation.
      * --------------------------------------------------------------
      */
 
@@ -1081,18 +1167,6 @@ class PuzzleSolver {
    * ------------------------------------------------------------------------
    * Flow: base expressions
    * ------------------------------------------------------------------------
-   *
-   * For each cell:
-   *
-   * Source:
-   *
-   *   sum(reachable) - outgoing + incoming = 1
-   *
-   * Non-source:
-   *
-   *   -reachable - outgoing + incoming = 0
-   *
-   * The edge terms are added later.
    */
 
   initializeFlowExpression(x, y) {
@@ -1263,14 +1337,6 @@ class PuzzleSolver {
        */
 
       if (hr) {
-        /*
-         * If this cell is reachable and the neighbour isn't a wall,
-         * the neighbour must also be reachable.
-         *
-         * horse[x]
-         *   <= wall[y] + horse[y]
-         */
-
         addLessOrEqual(
           model,
           sumExpressions([
@@ -1296,27 +1362,17 @@ class PuzzleSolver {
             `horseFlow_${x}_${y}_${x2}_${y2}`
           );
 
-        /*
-         * outgoing
-         */
         this.flowPreservationExpressions[x][y] =
           expressionMinus(
             this.flowPreservationExpressions[x][y],
             flow
           );
 
-        /*
-         * incoming
-         */
         this.flowPreservationExpressions[x2][y2] =
           expressionPlus(
             this.flowPreservationExpressions[x2][y2],
             flow
           );
-
-        /*
-         * A wall on either endpoint blocks the flow.
-         */
 
         addLessOrEqual(
           model,
@@ -1415,15 +1471,29 @@ class PuzzleSolver {
 
     /*
      * --------------------------------------------------------------
-     * Portal edge.
+     * Matching portal edge.
      * --------------------------------------------------------------
      *
-     * Connect this portal to every other portal.
+     * IMPORTANT:
      *
-     * This is safer than selecting only the first portal.
+     * A portal is identified by its character.
+     *
+     *   A <-> A
+     *   B <-> B
+     *
+     * but:
+     *
+     *   A -/-> B
+     *
+     * This is the direct equivalent of the Java implementation's
+     * dynamically-created PuzzleTileType(character, true, 1).
+     * --------------------------------------------------------------
      */
 
     if (isPortal(type)) {
+      const portalCharacter =
+        puzzle.portalCharacter(x, y);
+
       for (
         let x2 = 0;
         x2 < puzzle.width;
@@ -1441,16 +1511,19 @@ class PuzzleSolver {
             continue;
           }
 
+          /*
+           * Only matching portal characters are connected.
+           */
           if (
-            !isPortal(
-              puzzle.tileType(x2, y2)
-            )
+            puzzle.portalCharacter(x2, y2) !==
+            portalCharacter
           ) {
             continue;
           }
 
           /*
-           * Adjacent portals already have a normal four-way edge.
+           * Adjacent matching portals already have a normal
+           * four-way edge.
            */
           const distance =
             Math.abs(x2 - x) +
@@ -1461,8 +1534,11 @@ class PuzzleSolver {
           }
 
           /*
+           * --------------------------------------------------------
            * Horse portal edge.
+           * --------------------------------------------------------
            */
+
           if (hr) {
             addLessOrEqual(
               model,
@@ -1481,7 +1557,7 @@ class PuzzleSolver {
               model.newIntVar(
                 0,
                 maxFlow,
-                `horsePortalFlow_${x}_${y}_${x2}_${y2}`
+                `horsePortalFlow_${portalCharacter}_${x}_${y}_${x2}_${y2}`
               );
 
             this.flowPreservationExpressions[x][y] =
@@ -1498,8 +1574,11 @@ class PuzzleSolver {
           }
 
           /*
+           * --------------------------------------------------------
            * Unicorn portal edge.
+           * --------------------------------------------------------
            */
+
           if (ur) {
             addLessOrEqual(
               model,
@@ -1518,7 +1597,7 @@ class PuzzleSolver {
               model.newIntVar(
                 0,
                 maxFlow2,
-                `unicornPortalFlow_${x}_${y}_${x2}_${y2}`
+                `unicornPortalFlow_${portalCharacter}_${x}_${y}_${x2}_${y2}`
               );
 
             this.flow2PreservationExpressions[x][y] =
@@ -1582,18 +1661,6 @@ class PuzzleSolver {
         }
       }
     }
-
-    /*
-     * For the old solution:
-     *
-     *   sum(terms) = -wallsUsed
-     *
-     * Requiring:
-     *
-     *   sum(terms) >= 1 - wallsUsed
-     *
-     * forces at least one wall variable to change.
-     */
 
     addGreaterOrEqual(
       model,
@@ -1931,6 +1998,41 @@ async function main() {
   console.log(
     "Wall budget:",
     puzzle.wallBudget
+  );
+
+  /*
+   * Show portal mapping for debugging.
+   */
+  const portals = {};
+
+  for (
+    let x = 0;
+    x < puzzle.width;
+    x++
+  ) {
+    for (
+      let y = 0;
+      y < puzzle.height;
+      y++
+    ) {
+      const character =
+        puzzle.portalCharacter(x, y);
+
+      if (character == null) {
+        continue;
+      }
+
+      if (!portals[character]) {
+        portals[character] = [];
+      }
+
+      portals[character].push([x, y]);
+    }
+  }
+
+  console.log(
+    "Portals:",
+    portals
   );
 
   /*
