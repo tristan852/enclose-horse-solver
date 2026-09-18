@@ -1736,6 +1736,8 @@ function renderSolution(card, solution) {
     }
   });
 
+  console.log(walls);
+
   [...board.children].forEach((cell, index) => {
     
     cell.classList.toggle("wall", walls.has(index));
