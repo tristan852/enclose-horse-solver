@@ -2061,15 +2061,8 @@ async function main() {
     );
   }
 
-  // console.log(
-  //   "Level:",
-  //   level
-  // );
-
-  // console.log(
-  //   "Bonus:",
-  //   bonus
-  // );
+  console.log("Level:", level);
+  console.log("Bonus:", bonus);
 
   const puzzle =
     parsePuzzle(
