@@ -2064,8 +2064,8 @@ async function main() {
     );
   }
 
-  console.log("Level:", level);
-  console.log("Bonus:", bonus);
+  // console.log("Level:", level);
+  // console.log("Bonus:", bonus);
 
   const puzzle =
     parsePuzzle(
@@ -2074,7 +2074,7 @@ async function main() {
     );
   
   const bonusPuzzle =
-    parsePuzzle(
+    bonus === null ? null : parsePuzzle(
       bonus,
       true
     );
@@ -2114,11 +2114,11 @@ async function main() {
   results.hidden = false;
   
   const view1 = showPuzzle(puzzle);
-  const view2 = showPuzzle(bonusPuzzle);
+  const view2 = bonusPuzzle === null ? null : showPuzzle(bonusPuzzle);
   
   try {
     await initiallySolvePuzzle(puzzle, view1);
-    await initiallySolvePuzzle(bonusPuzzle, view2);
+    if(bonusPuzzle !== null) await initiallySolvePuzzle(bonusPuzzle, view2);
   } catch (error) {
     results.hidden = false;
     results.innerHTML =
