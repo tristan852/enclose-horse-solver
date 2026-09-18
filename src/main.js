@@ -1754,6 +1754,7 @@ function renderSolution(card, solution) {
     
     cell.classList.toggle("wall", walls.has(index));
     cell.classList.toggle("solution", walls.has(index) && reachableCells.has(index));
+    cell.classList.toggle("unused-solution", walls.has(index) && (!reachableCells.has(index)));
     cell.classList.toggle(
       "enclosed",
       enclosed.has(index) && !walls.has(index)
