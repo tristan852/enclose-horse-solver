@@ -1,22 +1,20 @@
-import { CpModel, CpSolver } from "or-tools-wasm/cp-sat";
+const params = new URLSearchParams(window.location.search);
 
-console.log("crossOriginIsolated:", window.crossOriginIsolated);
+const levelEncoded = params.get("level");
+const bonusEncoded = params.get("bonus");
 
-const model = new CpModel();
+function decode(encoded) {
+  const binary = atob(encoded);
+  const bytes = Uint8Array.from(binary, c => c.charCodeAt(0));
+  return JSON.parse(new TextDecoder().decode(bytes));
+}
 
-const x = model.newIntVar(0, 10, "x");
-const y = model.newIntVar(0, 10, "y");
+if (!levelEncoded) {
+  console.log("No puzzle supplied.");
+} else {
+  const level = decode(levelEncoded);
+  const bonus = bonusEncoded ? decode(bonusEncoded) : null;
 
-model.addLinearConstraint(x.plus(y), 0, 10);
-model.maximize(x.times(3).plus(y.times(2)));
-
-const solver = new CpSolver();
-
-const status = await solver.solve(model, {
-  numSearchWorkers: 1,
-});
-
-console.log("status:", solver.statusName(status));
-console.log("x:", solver.value(x));
-console.log("y:", solver.value(y));
-console.log("objective:", solver.objectiveValue());
+  console.log("Level:", level);
+  console.log("Bonus:", bonus);
+}
