@@ -2,9 +2,6 @@ const bookmarklet = `javascript:(function(){var l=window.__LEVEL__;if(!l){alert(
 
 document.getElementById("bookmark").href = bookmarklet;
 
-import * as ortools from "or-tools-wasm/cp-sat";
-console.log(ortools);
-
 import { CpModel, CpSolver } from "or-tools-wasm/cp-sat";
 
 const NEIGHBOUR_DIRECTIONS = [
@@ -16,97 +13,6 @@ const NEIGHBOUR_DIRECTIONS = [
 
 const MIN_SCORE = Number.MIN_SAFE_INTEGER;
 
-/*
- * --------------------------------------------------------------------------
- * Puzzle parsing
- * --------------------------------------------------------------------------
- *
- * The bookmarklet passes the complete enclose.horse level as:
- *
- *   ?level=<base64-json>
- *
- * The map is a newline-separated character grid.
- *
- * Known characters from the supplied puzzle:
- *
- *   . = grass
- *   ~ = water
- *   H = horse
- *   C = portal/tile type used by this puzzle
- *
- * The solver keeps the raw character on every tile so additional tile types
- * can be added without changing the parser.
- */
-
-function decodeBase64Json(encoded) {
-  const binary = atob(encoded);
-  const bytes = Uint8Array.from(binary, c => c.charCodeAt(0));
-  return JSON.parse(new TextDecoder().decode(bytes));
-}
-
-function parsePuzzle(level, bonus = null) {
-  if (!level || typeof level.map !== "string") {
-    throw new Error("Invalid puzzle: missing map.");
-  }
-
-  const rows = level.map.replace(/\r/g, "").split("\n");
-
-  if (rows.length === 0 || rows[0].length === 0) {
-    throw new Error("Invalid puzzle: empty map.");
-  }
-
-  const width = rows[0].length;
-  const height = rows.length;
-
-  if (!rows.every(row => row.length === width)) {
-    throw new Error("Invalid puzzle: map rows have different widths.");
-  }
-
-  const tiles = Array.from({ length: width }, (_, x) =>
-    Array.from({ length: height }, (_, y) => {
-      const char = rows[y][x];
-
-      return {
-        x,
-        y,
-        char,
-        type: tileTypeFromChar(char),
-      };
-    })
-  );
-
-  const puzzleType = puzzleTypeFromLevel(level, bonus);
-
-  return {
-    level,
-    bonus,
-
-    width,
-    height,
-    wallBudget: Number(level.budget ?? 0),
-    optimalScore:
-      level.optimalScore == null ? null : Number(level.optimalScore),
-
-    type: puzzleType,
-
-    tiles,
-
-    tileType(x, y) {
-      return tiles[x][y].type;
-    },
-
-    tile(x, y) {
-      return tiles[x][y];
-    },
-  };
-}
-
-/*
- * IMPORTANT:
- *
- * Keep these names independent from the actual map characters. That lets us
- * add the remaining enclose.horse tile types once they are observed.
- */
 const TILE = Object.freeze({
   GRASS: "GRASS",
   WATER: "WATER",
@@ -114,6 +20,12 @@ const TILE = Object.freeze({
   UNICORN: "UNICORN",
   PORTAL: "PORTAL",
 });
+
+function decodeBase64Json(encoded) {
+  const binary = atob(encoded);
+  const bytes = Uint8Array.from(binary, c => c.charCodeAt(0));
+  return JSON.parse(new TextDecoder().decode(bytes));
+}
 
 function tileTypeFromChar(char) {
   switch (char) {
@@ -126,33 +38,25 @@ function tileTypeFromChar(char) {
     case "H":
       return TILE.HORSE;
 
-    /*
-     * This is intentionally kept as a portal placeholder because the
-     * supplied map contains two C tiles and the Java solver treats portals
-     * as a tile type having another matching tile.
-     *
-     * If C has a different meaning in enclose.horse, change this mapping
-     * once that tile type is confirmed.
-     */
+    case "U":
+      return TILE.UNICORN;
+
     case "C":
       return TILE.PORTAL;
 
     default:
-      /*
-       * Unknown cells are preserved but treated as ordinary grass for now.
-       * This makes the parser useful while we identify the remaining
-       * enclose.horse tile characters.
-       */
-      console.warn(`Unknown puzzle tile '${char}', treating as grass.`);
+      console.warn(
+        `Unknown puzzle tile '${char}', treating as grass.`
+      );
       return TILE.GRASS;
   }
 }
 
 function puzzleTypeFromLevel(level, bonus) {
   const type = String(
-    level.bonusType ??
+    level?.bonusType ??
       bonus?.type ??
-      level.bonus?.type ??
+      level?.bonus?.type ??
       "default"
   ).toLowerCase();
 
@@ -173,100 +77,170 @@ function puzzleTypeFromLevel(level, bonus) {
   }
 }
 
-function isPortal(tileType) {
-  return tileType === TILE.PORTAL;
+function parsePuzzle(level, bonus = null) {
+  if (!level || typeof level.map !== "string") {
+    throw new Error("Invalid puzzle: missing map.");
+  }
+
+  const rows = level.map.replace(/\r/g, "").split("\n");
+
+  if (!rows.length || !rows[0].length) {
+    throw new Error("Invalid puzzle: empty map.");
+  }
+
+  const width = rows[0].length;
+  const height = rows.length;
+
+  if (!rows.every(row => row.length === width)) {
+    throw new Error(
+      "Invalid puzzle: map rows have different widths."
+    );
+  }
+
+  const tiles = Array.from(
+    { length: width },
+    (_, x) =>
+      Array.from(
+        { length: height },
+        (_, y) => {
+          const char = rows[y][x];
+
+          return {
+            x,
+            y,
+            char,
+            type: tileTypeFromChar(char),
+          };
+        }
+      )
+  );
+
+  return {
+    level,
+    bonus,
+    width,
+    height,
+
+    wallBudget: Number(level.budget ?? 0),
+
+    optimalScore:
+      level.optimalScore == null
+        ? null
+        : Number(level.optimalScore),
+
+    type: puzzleTypeFromLevel(level, bonus),
+
+    tiles,
+
+    tileType(x, y) {
+      return tiles[x][y].type;
+    },
+
+    tile(x, y) {
+      return tiles[x][y];
+    },
+  };
 }
 
-function isWater(tileType) {
-  return tileType === TILE.WATER;
+function isPortal(type) {
+  return type === TILE.PORTAL;
 }
 
-function isHorse(tileType) {
-  return tileType === TILE.HORSE;
+function isWater(type) {
+  return type === TILE.WATER;
 }
 
-function isUnicorn(tileType) {
-  return tileType === TILE.UNICORN;
+function isHorse(type) {
+  return type === TILE.HORSE;
 }
 
-function isGrass(tileType) {
-  return tileType === TILE.GRASS;
+function isUnicorn(type) {
+  return type === TILE.UNICORN;
 }
 
-/*
- * --------------------------------------------------------------------------
- * Scores
- * --------------------------------------------------------------------------
- *
- * This corresponds to PuzzleTileType.getScore() in the Java implementation.
- *
- * The exact values for all enclose.horse tile types should be filled in once
- * their PuzzleTileType definitions are known.
- */
-function tileScore(tileType) {
-  switch (tileType) {
+function isGrass(type) {
+  return type === TILE.GRASS;
+}
+
+function tileScore(type) {
+  switch (type) {
     case TILE.GRASS:
-      return 1;
-
     case TILE.HORSE:
-      return 1;
-
     case TILE.UNICORN:
-      return 1;
-
     case TILE.PORTAL:
       return 1;
 
     case TILE.WATER:
-      return 0;
-
     default:
       return 0;
   }
 }
 
 /*
- * --------------------------------------------------------------------------
- * Utility helpers for CP-SAT
- * --------------------------------------------------------------------------
+ * or-tools-wasm's LinearExpression API uses:
+ *
+ *   expr.plus(other)
+ *   expr.times(coefficient)
+ *
+ * rather than:
+ *
+ *   expr.add(other)
+ *   expr.mul(coefficient)
+ *   expr.sub(other)
+ *
+ * Keep all arithmetic going through these helpers so the rest of the
+ * solver cannot accidentally use the wrong API.
  */
+
+function expressionPlus(a, b) {
+  return a.plus(b);
+}
+
+function expressionMinus(a, b) {
+  return a.plus(b.times(-1));
+}
+
+function expressionTimes(a, coefficient) {
+  return a.times(coefficient);
+}
+
+function sumExpressions(expressions) {
+  if (!expressions.length) {
+    return null;
+  }
+
+  let result = expressions[0];
+
+  for (let i = 1; i < expressions.length; i++) {
+    result = expressionPlus(result, expressions[i]);
+  }
+
+  return result;
+}
+
+function sumOrConstant(expressions, constant = 0) {
+  if (!expressions.length) {
+    return constant;
+  }
+
+  return sumExpressions(expressions);
+}
 
 function boolValue(solver, variable) {
   return solver.value(variable) >= 0.5;
 }
 
-/*
- * Adds:
- *
- *   variable <= other
- *
- * which is the CP-SAT equivalent of the Java linear constraint:
- *
- *   variable - other <= 0
- */
-function addLessOrEqual(model, variable, other) {
-  model.addLessOrEqual(variable, other);
-}
-
-/*
- * Adds:
- *
- *   a + b <= 1
- */
 function addAtMostOne(model, a, b) {
-  model.addLessOrEqual(a.add(b), 1);
+  model.addLessOrEqual(
+    expressionPlus(a, b),
+    1
+  );
 }
 
 /*
  * --------------------------------------------------------------------------
- * Reachability preprocessing
+ * Reachability
  * --------------------------------------------------------------------------
- *
- * This is the direct equivalent of:
- *
- *   private void explore(int x, int y, boolean[][] reachable)
- *
- * in the Java solver.
  */
 
 function explore(puzzle, x, y, reachable) {
@@ -298,30 +272,30 @@ function explore(puzzle, x, y, reachable) {
     explore(puzzle, x2, y2, reachable);
   }
 
-  const tileType = puzzle.tileType(x, y);
+  if (!isPortal(puzzle.tileType(x, y))) {
+    return;
+  }
 
-  if (isPortal(tileType)) {
-    let found = false;
+  let found = false;
 
-    for (let x2 = 0; x2 < width; x2++) {
-      for (let y2 = 0; y2 < height; y2++) {
-        if (!isPortal(puzzle.tileType(x2, y2))) {
-          continue;
-        }
-
-        if (x2 === x && y2 === y) {
-          continue;
-        }
-
-        explore(puzzle, x2, y2, reachable);
-
-        found = true;
-        break;
+  for (let x2 = 0; x2 < width; x2++) {
+    for (let y2 = 0; y2 < height; y2++) {
+      if (!isPortal(puzzle.tileType(x2, y2))) {
+        continue;
       }
 
-      if (found) {
-        break;
+      if (x2 === x && y2 === y) {
+        continue;
       }
+
+      explore(puzzle, x2, y2, reachable);
+
+      found = true;
+      break;
+    }
+
+    if (found) {
+      break;
     }
   }
 }
@@ -339,11 +313,11 @@ function calculateStaticReachability(puzzle) {
 
   for (let x = 0; x < puzzle.width; x++) {
     for (let y = 0; y < puzzle.height; y++) {
-      const tileType = puzzle.tileType(x, y);
+      const type = puzzle.tileType(x, y);
 
-      if (isHorse(tileType)) {
+      if (isHorse(type)) {
         explore(puzzle, x, y, horseReachable);
-      } else if (isUnicorn(tileType)) {
+      } else if (isUnicorn(type)) {
         explore(puzzle, x, y, unicornReachable);
       }
     }
@@ -357,14 +331,13 @@ function calculateStaticReachability(puzzle) {
 
 /*
  * --------------------------------------------------------------------------
- * PuzzleSolver
+ * Solver
  * --------------------------------------------------------------------------
  */
 
 class PuzzleSolver {
   constructor(puzzle) {
     this.puzzle = puzzle;
-
     this.model = new CpModel();
 
     this.wallVariables = Array.from(
@@ -395,36 +368,20 @@ class PuzzleSolver {
       () => Array(puzzle.height)
     );
 
-    this.blacklistConstraints = [];
-
     this.initialize();
   }
 
   initialize() {
-    const {
-      puzzle,
-      model,
-      wallVariables,
-      horseReachableVariables,
-      unicornReachableVariables,
-    } = this;
-
+    const { puzzle, model } = this;
     const { width, height, wallBudget } = puzzle;
 
-    /*
-     * Java:
-     *
-     * MPConstraint wallBudgetConstraint = solver.makeConstraint(0, wallBudget);
-     *
-     * CP-SAT equivalent:
-     *
-     * sum(wallVariables) <= wallBudget
-     */
     const allWalls = [];
 
     for (let x = 0; x < width; x++) {
       for (let y = 0; y < height; y++) {
-        const wall = model.newBoolVar(`tileHasWall${x},${y}`);
+        const wall = model.newBoolVar(
+          `tileHasWall${x},${y}`
+        );
 
         const horse = model.newBoolVar(
           `tileIsHorseReachable${x},${y}`
@@ -434,55 +391,52 @@ class PuzzleSolver {
           `tileIsUnicornReachable${x},${y}`
         );
 
-        wallVariables[x][y] = wall;
-        horseReachableVariables[x][y] = horse;
-        unicornReachableVariables[x][y] = unicorn;
+        this.wallVariables[x][y] = wall;
+        this.horseReachableVariables[x][y] = horse;
+        this.unicornReachableVariables[x][y] = unicorn;
 
         allWalls.push(wall);
       }
     }
 
+    /*
+     * Do not seed reduce() with allWalls[0].
+     *
+     * The old code effectively started with the first variable and then
+     * added the first variable again.
+     */
     model.addLessOrEqual(
-      allWalls.reduce(
-        (expr, variable) => expr.add(variable),
-        allWalls[0]
-      ),
+      sumExpressions(allWalls),
       wallBudget
     );
 
-    /*
-     * Static graph reachability, exactly as in the Java solver.
-     */
     const staticReachability =
       calculateStaticReachability(puzzle);
 
-    this.horseReachable = staticReachability.horseReachable;
-    this.unicornReachable = staticReachability.unicornReachable;
+    this.horseReachable =
+      staticReachability.horseReachable;
 
-    /*
-     * Create the per-cell constraints.
-     */
+    this.unicornReachable =
+      staticReachability.unicornReachable;
+
     for (let x = 0; x < width; x++) {
       for (let y = 0; y < height; y++) {
         this.initializeCell(x, y);
       }
     }
 
-    /*
-     * Disable variables that are statically unreachable.
-     */
     for (let x = 0; x < width; x++) {
       for (let y = 0; y < height; y++) {
         if (!this.horseReachable[x][y]) {
           model.addEquality(
-            horseReachableVariables[x][y],
+            this.horseReachableVariables[x][y],
             0
           );
         }
 
         if (!this.unicornReachable[x][y]) {
           model.addEquality(
-            unicornReachableVariables[x][y],
+            this.unicornReachableVariables[x][y],
             0
           );
         }
@@ -491,24 +445,30 @@ class PuzzleSolver {
           !this.horseReachable[x][y] &&
           !this.unicornReachable[x][y]
         ) {
-          model.addEquality(wallVariables[x][y], 0);
+          model.addEquality(
+            this.wallVariables[x][y],
+            0
+          );
         }
       }
     }
 
-    /*
-     * maxFlow / maxFlow2 are exactly the number of statically reachable
-     * cells minus one, matching the Java implementation.
-     */
-    const maxFlow =
-      this.horseReachable.flat().filter(Boolean).length - 1;
+    const maxFlow = Math.max(
+      0,
+      this.horseReachable
+        .flat()
+        .filter(Boolean)
+        .length - 1
+    );
 
-    const maxFlow2 =
-      this.unicornReachable.flat().filter(Boolean).length - 1;
+    const maxFlow2 = Math.max(
+      0,
+      this.unicornReachable
+        .flat()
+        .filter(Boolean)
+        .length - 1
+    );
 
-    /*
-     * Add the actual flow-preservation and adjacency constraints.
-     */
     for (let x = 0; x < width; x++) {
       for (let y = 0; y < height; y++) {
         this.initializeFlow(
@@ -520,192 +480,149 @@ class PuzzleSolver {
       }
     }
 
-    /*
-     * Objective.
-     *
-     * Java:
-     *
-     * objective.setMaximization();
-     *
-     * The CP-SAT API exposes maximize() directly. <span data-assistant-content-reference="" class="xeh6zmm xt0psk2 x1ghz6dp" data-assistant-grouped-webpages="" data-content-reference-type="grouped_webpages"><span aria-label="Quellen" class="xt0psk2 x1j9pc4w x11njtxf" data-assistant-grouped-webpages-list="" role="group"><span class="x1lziwak xayvhss" data-assistant-grouped-webpages-item=""><button aria-controls="assistant-sources-dialog" aria-haspopup="dialog" aria-label="GitHub" class="xd82pcb xdj9scp xomzcpc x1cpjm7i xt81g8a xm4btww x1vt6bfd xrd0f8c x1hmns74 xy5mcqj x6s0dn4 xjyslct xjbqb8w x12hms15 xc342km x1pk238y x101hxm1 xe6aan1 x1ypdohk x3nfvp2 xjb2p0i x1ivwg07 xk50ysn x13vifvy xc8icb0 xtu1cor x1scn00m x1lvh1i4 xlm6wrl xk2swo9 xt970qd xqfkjy8 x1znate x1n2onr6 xkrqix3 xxymvpz" data-assistant-sources-trigger="" data-assistant-sources-payload="[{&quot;attribution&quot;:&quot;GitHub&quot;,&quot;sourceIndex&quot;:0,&quot;title&quot;:&quot;or-tools-wasm/README.md at stable · Axelwickm/or-tools-wasm · GitHub&quot;,&quot;url&quot;:&quot;https://github.com/Axelwickm/or-tools-wasm/blob/stable/README.md?utm_source=chatgpt.com&quot;}]" data-assistant-grouped-webpages-trigger="" type="button"><span aria-hidden="true" class="x1eya9vm xvle69y x1r7ld26 x16rqkct x1y0btm7 xmkeg23 xmfxnzj x1pk238y xe6aan1 xwz0xwf xdl72j9 x1c4vz4f x2lah0s x6phcfz x1s688f x1jw3ynk xo5v014 xowauwy xb3r6kr x1ku5rj1 x1n2onr6" data-assistant-source-icon="">G<img alt="" class="x-default-marker x5yr21d xh8yej3 x10a8y8t xl1xv1r x10l6tqk" data-assistant-source-icon-image="" src="https://www.google.com/s2/favicons?domain=https%3A%2F%2Fgithub.com&sz=128" ></span><span class="x1heor9g x1qlqyl8 x1pd3egz xeuugli x101abm8 xryxfnj x1b2iylo xwgcxoh xlyipyv xuxw1ft" data-assistant-reference-title="">GitHub</span></button></span></span></span>
-
-     */
     const objectiveTerms = [];
 
     for (let x = 0; x < width; x++) {
       for (let y = 0; y < height; y++) {
-        const score = tileScore(puzzle.tileType(x, y));
+        const score = tileScore(
+          puzzle.tileType(x, y)
+        );
 
         if (score !== 0) {
           objectiveTerms.push(
-            horseReachableVariables[x][y].mul(score)
+            expressionTimes(
+              this.horseReachableVariables[x][y],
+              score
+            )
           );
 
           objectiveTerms.push(
-            unicornReachableVariables[x][y].mul(score)
+            expressionTimes(
+              this.unicornReachableVariables[x][y],
+              score
+            )
           );
         }
 
         if (puzzle.type === "COSTLY_WALLS") {
           objectiveTerms.push(
-            wallVariables[x][y].mul(-6)
+            expressionTimes(
+              this.wallVariables[x][y],
+              -6
+            )
           );
         }
       }
     }
 
-    const objective = sumExpressions(objectiveTerms);
-
-    model.maximize(objective);
+    model.maximize(
+      sumExpressions(objectiveTerms)
+    );
   }
 
   initializeCell(x, y) {
-    const {
-      puzzle,
-      model,
-      wallVariables,
-      horseReachableVariables,
-      unicornReachableVariables,
-    } = this;
+    const { puzzle, model } = this;
 
-    const tileType = puzzle.tileType(x, y);
+    const type = puzzle.tileType(x, y);
 
-    const wall = wallVariables[x][y];
-    const horse = horseReachableVariables[x][y];
-    const unicorn = unicornReachableVariables[x][y];
+    const wall = this.wallVariables[x][y];
+    const horse =
+      this.horseReachableVariables[x][y];
+    const unicorn =
+      this.unicornReachableVariables[x][y];
 
-    /*
-     * Puzzle type restrictions.
-     *
-     * Java:
-     *
-     * LOVEBIRDS:
-     *   horse == unicorn
-     *
-     * LOVERS_QUARREL:
-     *   horse + unicorn <= 1
-     *
-     * default:
-     *   unicorn == 0
-     */
     if (puzzle.type === "LOVEBIRDS") {
       model.addEquality(horse, unicorn);
-    } else if (puzzle.type === "LOVERS_QUARREL") {
-      model.addLessOrEqual(horse.add(unicorn), 1);
+    } else if (
+      puzzle.type === "LOVERS_QUARREL"
+    ) {
+      model.addLessOrEqual(
+        expressionPlus(horse, unicorn),
+        1
+      );
     } else {
       model.addEquality(unicorn, 0);
     }
 
-    /*
-     * Wall cannot coexist with reachable cells.
-     *
-     * wall + horse <= 1
-     * wall + unicorn <= 1
-     */
     addAtMostOne(model, wall, horse);
     addAtMostOne(model, wall, unicorn);
 
-    /*
-     * Horse and unicorn are mandatory on their own tiles.
-     */
-    if (isHorse(tileType)) {
+    if (isHorse(type)) {
       model.addEquality(horse, 1);
     }
 
-    if (isUnicorn(tileType)) {
+    if (isUnicorn(type)) {
       model.addEquality(unicorn, 1);
     }
 
-    /*
-     * Only grass may receive a wall.
-     */
-    if (!isGrass(tileType)) {
+    if (!isGrass(type)) {
       model.addEquality(wall, 0);
     }
 
-    /*
-     * Water and edge cells cannot be reachable.
-     */
     const isOnEdge =
       x === 0 ||
       x === puzzle.width - 1 ||
       y === 0 ||
       y === puzzle.height - 1;
 
-    if (isWater(tileType) || isOnEdge) {
+    if (isWater(type) || isOnEdge) {
       model.addEquality(horse, 0);
       model.addEquality(unicorn, 0);
     }
   }
 
   initializeFlow(x, y, maxFlow, maxFlow2) {
-    const {
-      puzzle,
-      model,
-      wallVariables,
-      horseReachableVariables,
-      unicornReachableVariables,
-    } = this;
+    const { puzzle, model } = this;
 
-    const tileType = puzzle.tileType(x, y);
+    const type = puzzle.tileType(x, y);
 
-    const horse = horseReachableVariables[x][y];
-    const unicorn = unicornReachableVariables[x][y];
+    const horse =
+      this.horseReachableVariables[x][y];
 
-    /*
-     * We represent the Java flow-preservation constraint by constructing
-     * the complete linear expression first, then adding its equality.
-     *
-     * Java's constraints are:
-     *
-     * horse tile:
-     *     sum(horseReachable) == 1 + outgoing/incoming flow
-     *
-     * ordinary tile:
-     *     -horse + incoming/outgoing flow == 0
-     */
-    const horseFlows = [];
-    const unicornFlows = [];
+    const unicorn =
+      this.unicornReachableVariables[x][y];
+
+    const horseTerms = [];
+    const unicornTerms = [];
 
     /*
-     * Horse source.
+     * Source flow expression.
      */
-    if (isHorse(tileType)) {
+    if (isHorse(type)) {
       for (let x2 = 0; x2 < puzzle.width; x2++) {
         for (let y2 = 0; y2 < puzzle.height; y2++) {
-          horseFlows.push(horseReachableVariables[x2][y2]);
+          horseTerms.push(
+            this.horseReachableVariables[x2][y2]
+          );
         }
       }
     } else {
-      horseFlows.push(horse.mul(-1));
+      horseTerms.push(
+        expressionTimes(horse, -1)
+      );
     }
 
-    /*
-     * Unicorn source.
-     */
-    if (isUnicorn(tileType)) {
+    if (isUnicorn(type)) {
       for (let x2 = 0; x2 < puzzle.width; x2++) {
         for (let y2 = 0; y2 < puzzle.height; y2++) {
-          unicornFlows.push(unicornReachableVariables[x2][y2]);
+          unicornTerms.push(
+            this.unicornReachableVariables[x2][y2]
+          );
         }
       }
     } else {
-      unicornFlows.push(unicorn.mul(-1));
+      unicornTerms.push(
+        expressionTimes(unicorn, -1)
+      );
     }
 
-    /*
-     * Store these expressions. The directed flow variables are added below.
-     */
     this.flowPreservationExpressions[x][y] =
-      sumExpressions(horseFlows);
+      sumExpressions(horseTerms);
 
     this.flow2PreservationExpressions[x][y] =
-      sumExpressions(unicornFlows);
+      sumExpressions(unicornTerms);
 
-    /*
-     * Java skips WATER here.
-     */
-    if (isWater(tileType)) {
+    if (isWater(type)) {
       return;
     }
 
@@ -729,109 +646,159 @@ class PuzzleSolver {
         continue;
       }
 
-      if (isWater(puzzle.tileType(x2, y2))) {
+      if (
+        isWater(
+          puzzle.tileType(x2, y2)
+        )
+      ) {
         continue;
       }
 
-      const ownWall = wallVariables[x][y];
-      const wall = wallVariables[x2][y2];
+      const ownWall =
+        this.wallVariables[x][y];
 
-      /*
-       * Horse flow.
-       */
+      const neighbourWall =
+        this.wallVariables[x2][y2];
+
       if (hr) {
         /*
          * horse[x,y] - wall[x2,y2] - horse[x2,y2] <= 0
          */
-        model.addLessOrEqual(
-          horse.sub(wall).sub(
-            horseReachableVariables[x2][y2]
+        const neighbourTerms = [
+          horse,
+          expressionTimes(
+            neighbourWall,
+            -1
           ),
+          expressionTimes(
+            this.horseReachableVariables[x2][y2],
+            -1
+          ),
+        ];
+
+        model.addLessOrEqual(
+          sumExpressions(neighbourTerms),
           0
         );
 
-        const flowOutgoing = model.newIntVar(
+        const flow = model.newIntVar(
           0,
-          Math.max(0, maxFlow),
+          maxFlow,
           `flow${x},${y},${x2},${y2}`
         );
 
         this.flowPreservationExpressions[x][y] =
-          this.flowPreservationExpressions[x][y]
-            .sub(flowOutgoing);
+          expressionMinus(
+            this.flowPreservationExpressions[x][y],
+            flow
+          );
 
         this.flowPreservationExpressions[x2][y2] =
-          this.flowPreservationExpressions[x2][y2]
-            .add(flowOutgoing);
+          expressionPlus(
+            this.flowPreservationExpressions[x2][y2],
+            flow
+          );
 
         /*
-         * flow <= maxFlow * (1 - wall)
-         *
-         * flow + maxFlow * wall <= maxFlow
+         * flow + maxFlow * neighbourWall <= maxFlow
          */
         model.addLessOrEqual(
-          flowOutgoing.add(wall.mul(maxFlow)),
+          expressionPlus(
+            flow,
+            expressionTimes(
+              neighbourWall,
+              maxFlow
+            )
+          ),
           maxFlow
         );
 
         /*
-         * flow <= maxFlow * (1 - ownWall)
+         * flow + maxFlow * ownWall <= maxFlow
          */
         model.addLessOrEqual(
-          flowOutgoing.add(ownWall.mul(maxFlow)),
+          expressionPlus(
+            flow,
+            expressionTimes(
+              ownWall,
+              maxFlow
+            )
+          ),
           maxFlow
         );
       }
 
-      /*
-       * Unicorn flow.
-       */
       if (ur) {
-        model.addLessOrEqual(
-          unicorn.sub(wall).sub(
-            unicornReachableVariables[x2][y2]
+        const neighbourTerms = [
+          unicorn,
+          expressionTimes(
+            neighbourWall,
+            -1
           ),
+          expressionTimes(
+            this.unicornReachableVariables[x2][y2],
+            -1
+          ),
+        ];
+
+        model.addLessOrEqual(
+          sumExpressions(neighbourTerms),
           0
         );
 
-        const flowOutgoing = model.newIntVar(
+        const flow = model.newIntVar(
           0,
-          Math.max(0, maxFlow2),
+          maxFlow2,
           `flow2${x},${y},${x2},${y2}`
         );
 
         this.flow2PreservationExpressions[x][y] =
-          this.flow2PreservationExpressions[x][y]
-            .sub(flowOutgoing);
+          expressionMinus(
+            this.flow2PreservationExpressions[x][y],
+            flow
+          );
 
         this.flow2PreservationExpressions[x2][y2] =
-          this.flow2PreservationExpressions[x2][y2]
-            .add(flowOutgoing);
+          expressionPlus(
+            this.flow2PreservationExpressions[x2][y2],
+            flow
+          );
 
         model.addLessOrEqual(
-          flowOutgoing.add(wall.mul(maxFlow2)),
+          expressionPlus(
+            flow,
+            expressionTimes(
+              neighbourWall,
+              maxFlow2
+            )
+          ),
           maxFlow2
         );
 
         model.addLessOrEqual(
-          flowOutgoing.add(ownWall.mul(maxFlow2)),
+          expressionPlus(
+            flow,
+            expressionTimes(
+              ownWall,
+              maxFlow2
+            )
+          ),
           maxFlow2
         );
       }
     }
 
     /*
-     * Portal flow.
-     *
-     * This deliberately follows the Java implementation's unusual
-     * "find the first matching portal" behavior.
+     * Portal connection.
      */
-    if (isPortal(tileType)) {
+    if (isPortal(type)) {
       let found = false;
 
       for (let x2 = 0; x2 < puzzle.width; x2++) {
         for (let y2 = 0; y2 < puzzle.height; y2++) {
-          if (puzzle.tileType(x2, y2) !== tileType) {
+          if (
+            puzzle.tileType(x2, y2) !== type
+          ) {
             continue;
           }
 
@@ -840,53 +807,72 @@ class PuzzleSolver {
           }
 
           const distance =
-            Math.abs(x2 - x) + Math.abs(y2 - y);
+            Math.abs(x2 - x) +
+            Math.abs(y2 - y);
 
           if (distance > 1) {
             if (hr) {
               model.addLessOrEqual(
-                horse.sub(
-                  horseReachableVariables[x2][y2]
-                ),
+                sumExpressions([
+                  horse,
+                  expressionTimes(
+                    this.horseReachableVariables[x2][y2],
+                    -1
+                  ),
+                ]),
                 0
               );
 
-              const flowOutgoing = model.newIntVar(
-                0,
-                Math.max(0, maxFlow),
-                `portalFlow${x},${y},${x2},${y2}`
-              );
+              const flow =
+                model.newIntVar(
+                  0,
+                  maxFlow,
+                  `portalFlow${x},${y},${x2},${y2}`
+                );
 
               this.flowPreservationExpressions[x][y] =
-                this.flowPreservationExpressions[x][y]
-                  .sub(flowOutgoing);
+                expressionMinus(
+                  this.flowPreservationExpressions[x][y],
+                  flow
+                );
 
               this.flowPreservationExpressions[x2][y2] =
-                this.flowPreservationExpressions[x2][y2]
-                  .add(flowOutgoing);
+                expressionPlus(
+                  this.flowPreservationExpressions[x2][y2],
+                  flow
+                );
             }
 
             if (ur) {
               model.addLessOrEqual(
-                unicorn.sub(
-                  unicornReachableVariables[x2][y2]
-                ),
+                sumExpressions([
+                  unicorn,
+                  expressionTimes(
+                    this.unicornReachableVariables[x2][y2],
+                    -1
+                  ),
+                ]),
                 0
               );
 
-              const flowOutgoing = model.newIntVar(
-                0,
-                Math.max(0, maxFlow2),
-                `portalFlow2${x},${y},${x2},${y2}`
-              );
+              const flow =
+                model.newIntVar(
+                  0,
+                  maxFlow2,
+                  `portalFlow2${x},${y},${x2},${y2}`
+                );
 
               this.flow2PreservationExpressions[x][y] =
-                this.flow2PreservationExpressions[x][y]
-                  .sub(flowOutgoing);
+                expressionMinus(
+                  this.flow2PreservationExpressions[x][y],
+                  flow
+                );
 
               this.flow2PreservationExpressions[x2][y2] =
-                this.flow2PreservationExpressions[x2][y2]
-                  .add(flowOutgoing);
+                expressionPlus(
+                  this.flow2PreservationExpressions[x2][y2],
+                  flow
+                );
             }
           }
 
@@ -900,61 +886,41 @@ class PuzzleSolver {
       }
     }
 
-    /*
-     * Add the completed flow conservation constraints.
-     */
     model.addEquality(
       this.flowPreservationExpressions[x][y],
-      isHorse(tileType) ? 1 : 0
+      isHorse(type) ? 1 : 0
     );
 
     model.addEquality(
       this.flow2PreservationExpressions[x][y],
-      isUnicorn(tileType) ? 1 : 0
+      isUnicorn(type) ? 1 : 0
     );
   }
 
   blacklistSolution(solution) {
-    const {
-      puzzle,
-      model,
-      wallVariables,
-    } = this;
+    const { puzzle, model } = this;
 
     let wallsUsed = 0;
-
-    for (let x = 0; x < puzzle.width; x++) {
-      for (let y = 0; y < puzzle.height; y++) {
-        if (solution.isWall[x][y]) {
-          wallsUsed++;
-        }
-      }
-    }
-
-    /*
-     * Java:
-     *
-     * constraint = solver.makeConstraint(
-     *     1 - wallsUsed,
-     *     infinity
-     * );
-     *
-     * wall solution:
-     *     -wallVariable
-     *
-     * non-wall:
-     *     +wallVariable
-     *
-     * This forbids exactly the same wall configuration.
-     */
     const terms = [];
 
     for (let x = 0; x < puzzle.width; x++) {
       for (let y = 0; y < puzzle.height; y++) {
-        if (solution.isWall[x][y]) {
-          terms.push(wallVariables[x][y].mul(-1));
+        const wall =
+          solution.isWall[x][y];
+
+        if (wall) {
+          wallsUsed++;
+
+          terms.push(
+            expressionTimes(
+              this.wallVariables[x][y],
+              -1
+            )
+          );
         } else {
-          terms.push(wallVariables[x][y]);
+          terms.push(
+            this.wallVariables[x][y]
+          );
         }
       }
     }
@@ -965,74 +931,86 @@ class PuzzleSolver {
     );
   }
 
+  buildScoreExpression() {
+    const { puzzle } = this;
+    const terms = [];
+
+    for (let x = 0; x < puzzle.width; x++) {
+      for (let y = 0; y < puzzle.height; y++) {
+        const score = tileScore(
+          puzzle.tileType(x, y)
+        );
+
+        if (score !== 0) {
+          terms.push(
+            expressionTimes(
+              this.horseReachableVariables[x][y],
+              score
+            )
+          );
+
+          terms.push(
+            expressionTimes(
+              this.unicornReachableVariables[x][y],
+              score
+            )
+          );
+        }
+
+        if (
+          puzzle.type === "COSTLY_WALLS"
+        ) {
+          terms.push(
+            expressionTimes(
+              this.wallVariables[x][y],
+              -6
+            )
+          );
+        }
+      }
+    }
+
+    return sumExpressions(terms);
+  }
+
   async solve(minScore = MIN_SCORE) {
     const { puzzle, model } = this;
 
-    /*
-     * Java uses:
-     *
-     * solver.setTimeLimit(120_000);
-     * solver.setNumThreads(1);
-     *
-     * or-tools-wasm's CP-SAT interface accepts solver parameters through
-     * solve(). <span data-assistant-content-reference="" class="xeh6zmm xt0psk2 x1ghz6dp" data-assistant-grouped-webpages="" data-content-reference-type="grouped_webpages"><span aria-label="Quellen" class="xt0psk2 x1j9pc4w x11njtxf" data-assistant-grouped-webpages-list="" role="group"><span class="x1lziwak xayvhss" data-assistant-grouped-webpages-item=""><button aria-controls="assistant-sources-dialog" aria-haspopup="dialog" aria-label="GitHub" class="xd82pcb xdj9scp xomzcpc x1cpjm7i xt81g8a xm4btww x1vt6bfd xrd0f8c x1hmns74 xy5mcqj x6s0dn4 xjyslct xjbqb8w x12hms15 xc342km x1pk238y x101hxm1 xe6aan1 x1ypdohk x3nfvp2 xjb2p0i x1ivwg07 xk50ysn x13vifvy xc8icb0 xtu1cor x1scn00m x1lvh1i4 xlm6wrl xk2swo9 xt970qd xqfkjy8 x1znate x1n2onr6 xkrqix3 xxymvpz" data-assistant-sources-trigger="" data-assistant-sources-payload="[{&quot;attribution&quot;:&quot;GitHub&quot;,&quot;sourceIndex&quot;:0,&quot;title&quot;:&quot;or-tools-wasm/README.md at stable · Axelwickm/or-tools-wasm · GitHub&quot;,&quot;url&quot;:&quot;https://github.com/Axelwickm/or-tools-wasm/blob/stable/README.md?utm_source=chatgpt.com&quot;}]" data-assistant-grouped-webpages-trigger="" type="button"><span aria-hidden="true" class="x1eya9vm xvle69y x1r7ld26 x16rqkct x1y0btm7 xmkeg23 xmfxnzj x1pk238y xe6aan1 xwz0xwf xdl72j9 x1c4vz4f x2lah0s x6phcfz x1s688f x1jw3ynk xo5v014 xowauwy xb3r6kr x1ku5rj1 x1n2onr6" data-assistant-source-icon="">G<img alt="" class="x-default-marker x5yr21d xh8yej3 x10a8y8t xl1xv1r x10l6tqk" data-assistant-source-icon-image="" src="https://www.google.com/s2/favicons?domain=https%3A%2F%2Fgithub.com&sz=128" ></span><span class="x1heor9g x1qlqyl8 x1pd3egz xeuugli x101abm8 xryxfnj x1b2iylo xwgcxoh xlyipyv xuxw1ft" data-assistant-reference-title="">GitHub</span></button></span></span></span>
-
-     */
     const solver = new CpSolver();
 
     /*
-     * The Java implementation applies the minimum score after building
-     * the objective. For Lovebirds the externally-visible score is half
-     * the internal objective.
+     * Add the score lower bound only when requested.
+     *
+     * This is done before solve(), because CP-SAT constraints cannot be
+     * modified after solving.
      */
     if (minScore !== MIN_SCORE) {
       const trueMinScore =
         puzzle.type === "LOVEBIRDS"
-          ? minScore << 1
+          ? minScore * 2
           : minScore;
 
-      /*
-       * CP-SAT doesn't mutate an existing linear constraint the way
-       * MPSolver does. Reconstruct the equivalent score lower bound.
-       */
-      const scoreTerms = [];
-
-      for (let x = 0; x < puzzle.width; x++) {
-        for (let y = 0; y < puzzle.height; y++) {
-          const score = tileScore(puzzle.tileType(x, y));
-
-          if (score !== 0) {
-            scoreTerms.push(
-              this.horseReachableVariables[x][y].mul(score)
-            );
-
-            scoreTerms.push(
-              this.unicornReachableVariables[x][y].mul(score)
-            );
-          }
-
-          if (puzzle.type === "COSTLY_WALLS") {
-            scoreTerms.push(
-              this.wallVariables[x][y].mul(-6)
-            );
-          }
-        }
-      }
-
       model.addGreaterOrEqual(
-        sumExpressions(scoreTerms),
+        this.buildScoreExpression(),
         trueMinScore
       );
     }
 
-    const status = await solver.solve(model, {
-      maxTimeInSeconds: 120,
-      numSearchWorkers: 1,
-    });
+    const status = await solver.solve(
+      model,
+      {
+        maxTimeInSeconds: 120,
+        numSearchWorkers: 1,
+      }
+    );
 
-    const statusName = solver.statusName(status);
+    const statusName =
+      solver.statusName(status);
 
-    console.log("Solver status:", statusName);
+    console.log(
+      "Solver status:",
+      statusName
+    );
 
     if (
       statusName !== "OPTIMAL" &&
@@ -1072,7 +1050,8 @@ class PuzzleSolver {
         );
 
         isWall[x][y] = wall;
-        isEnclosed[x][y] = horse || unicorn;
+        isEnclosed[x][y] =
+          horse || unicorn;
 
         if (wall) {
           wallCount++;
@@ -1086,36 +1065,43 @@ class PuzzleSolver {
       }
     }
 
-    if (puzzle.type === "COSTLY_WALLS") {
+    if (
+      puzzle.type === "COSTLY_WALLS"
+    ) {
       score -= 6 * wallCount;
     }
 
-    /*
-     * CP-SAT objectiveValue() corresponds to the objective used by the
-     * model. For Lovebirds the Java solver divides the internal objective
-     * by two.
-     */
-    let objectiveValue = solver.objectiveValue();
+    let objectiveValue =
+      solver.objectiveValue();
 
-    if (puzzle.type === "LOVEBIRDS") {
+    if (
+      puzzle.type === "LOVEBIRDS"
+    ) {
       objectiveValue *= 0.5;
     }
 
-    console.log("Computed score:", score);
-    console.log("Objective:", objectiveValue);
-    console.log("Walls:", wallCount);
+    console.log(
+      "Computed score:",
+      score
+    );
+
+    console.log(
+      "Objective:",
+      objectiveValue
+    );
+
+    console.log(
+      "Walls:",
+      wallCount
+    );
 
     return {
       puzzle,
-
       score,
       objectiveValue,
-
       isWall,
       isEnclosed,
-
       wallsUsed: wallCount,
-
       status: statusName,
     };
   }
@@ -1123,36 +1109,18 @@ class PuzzleSolver {
 
 /*
  * --------------------------------------------------------------------------
- * Linear expression helper
- * --------------------------------------------------------------------------
- */
-
-function sumExpressions(expressions) {
-  if (expressions.length === 0) {
-    throw new Error("Cannot sum an empty expression.");
-  }
-
-  let result = expressions[0];
-
-  for (let i = 1; i < expressions.length; i++) {
-    result = result.add(expressions[i]);
-  }
-
-  return result;
-}
-
-/*
- * --------------------------------------------------------------------------
- * Application entry point
+ * Application
  * --------------------------------------------------------------------------
  */
 
 async function main() {
-  const params = new URLSearchParams(
-    window.location.search
-  );
+  const params =
+    new URLSearchParams(
+      window.location.search
+    );
 
-  const levelEncoded = params.get("level");
+  const levelEncoded =
+    params.get("level");
 
   if (!levelEncoded) {
     console.log(
@@ -1165,47 +1133,77 @@ async function main() {
   let bonus = null;
 
   try {
-    level = decodeBase64Json(levelEncoded);
+    level =
+      decodeBase64Json(levelEncoded);
 
-    const bonusEncoded = params.get("bonus");
+    const bonusEncoded =
+      params.get("bonus");
 
     if (bonusEncoded) {
-      bonus = decodeBase64Json(bonusEncoded);
+      bonus =
+        decodeBase64Json(bonusEncoded);
     }
   } catch (error) {
-    console.error("Failed to decode puzzle:", error);
-    throw new Error("Could not decode puzzle data.");
+    console.error(
+      "Failed to decode puzzle:",
+      error
+    );
+
+    throw new Error(
+      "Could not decode puzzle data."
+    );
   }
 
-  console.log("Level:", level);
-  console.log("Bonus:", bonus);
+  console.log(
+    "Level:",
+    level
+  );
 
-  const puzzle = parsePuzzle(level, bonus);
+  console.log(
+    "Bonus:",
+    bonus
+  );
 
-  console.log("Parsed puzzle:", puzzle);
+  const puzzle =
+    parsePuzzle(level, bonus);
+
+  console.log(
+    "Parsed puzzle:",
+    puzzle
+  );
+
   console.log(
     `Board: ${puzzle.width} × ${puzzle.height}`
   );
-  console.log("Puzzle type:", puzzle.type);
-  console.log("Wall budget:", puzzle.wallBudget);
 
-  const solver = new PuzzleSolver(puzzle);
+  console.log(
+    "Puzzle type:",
+    puzzle.type
+  );
 
-  const solution = await solver.solve();
+  console.log(
+    "Wall budget:",
+    puzzle.wallBudget
+  );
+
+  const solver =
+    new PuzzleSolver(puzzle);
+
+  const solution =
+    await solver.solve();
 
   if (!solution) {
-    console.log("No feasible solution found.");
+    console.log(
+      "No feasible solution found."
+    );
     return;
   }
 
-  console.log("Solution:", solution);
+  console.log(
+    "Solution:",
+    solution
+  );
 
-  /*
-   * Temporary visual output.
-   *
-   * This gives us something immediately useful before wiring the result
-   * into your existing board renderer.
-   */
   console.table(
     Array.from(
       { length: puzzle.height },
@@ -1213,15 +1211,16 @@ async function main() {
         Array.from(
           { length: puzzle.width },
           (_, x) => {
-            if (solution.isWall[x][y]) {
+            if (
+              solution.isWall[x][y]
+            ) {
               return "#";
             }
 
-            if (solution.isEnclosed[x][y]) {
-              return puzzle.tile(x, y).char;
-            }
-
-            return puzzle.tile(x, y).char;
+            return puzzle.tile(
+              x,
+              y
+            ).char;
           }
         ).join("")
     )
