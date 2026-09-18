@@ -2,29 +2,8 @@ const bookmarklet = `javascript:(function(){var l=window.__LEVEL__;if(!l){alert(
 
 document.getElementById("bookmark").href = bookmarklet;
 
-const params = new URLSearchParams(window.location.search);
-
-const levelEncoded = params.get("level");
-const bonusEncoded = params.get("bonus");
-
-function decode(encoded) {
-  const binary = atob(encoded);
-  const bytes = Uint8Array.from(binary, c => c.charCodeAt(0));
-  return JSON.parse(new TextDecoder().decode(bytes));
-}
-
-if (!levelEncoded) {
-  console.log("No puzzle supplied.");
-} else {
-  const level = decode(levelEncoded);
-  const bonus = bonusEncoded ? decode(bonusEncoded) : null;
-
-  console.log("Level:", level);
-  console.log("Bonus:", bonus);
-}
-
-const level = decode(levelEncoded);
-const bonus = bonusEncoded ? decode(bonusEncoded) : null;
+import * as ortools from "or-tools-wasm/cp-sat";
+console.log(ortools);
 
 import { CpModel, CpSolver } from "or-tools-wasm/cp-sat";
 
