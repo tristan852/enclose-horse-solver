@@ -1888,7 +1888,7 @@ function createPuzzleCard(puzzle) {
 }
 
 async function showPuzzle(puzzle) {
-  const view = createPuzzleCard(puzzle);
+  const view = createPuzzleCard(puzzle.level);
 
   results.append(view.card);
 
