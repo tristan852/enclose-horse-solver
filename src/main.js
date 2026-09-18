@@ -1415,7 +1415,6 @@ class PuzzleSolver {
   async solve(
     optimalScore = MIN_SCORE
   ) {
-    console.log("optimal score: " + optimalScore)
     this.addOptimalScore(
       optimalScore
     );
@@ -1542,21 +1541,6 @@ class PuzzleSolver {
     ) {
       objectiveValue *= 0.5;
     }
-
-    console.log(
-      "Computed score:",
-      score
-    );
-
-    console.log(
-      "Objective:",
-      objectiveValue
-    );
-
-    console.log(
-      "Walls:",
-      wallCount
-    );
 
     if (
       Math.abs(
