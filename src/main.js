@@ -1898,9 +1898,11 @@ function showPuzzle(puzzle) {
     () => resizeBoard(view.card, view.width, view.height),
     { passive: true }
   );
+  
+  return view;
 }
 
-async function initiallySolvePuzzle(puzzle) {
+async function initiallySolvePuzzle(puzzle, view) {
   let currentSolution = null;
   let solutionNumber = 0;
   let exhausted = false;
@@ -2097,12 +2099,12 @@ async function main() {
   
   results.hidden = false;
   
-  showPuzzle(puzzle);
-  showPuzzle(bonusPuzzle);
+  view1 = showPuzzle(puzzle);
+  view2 = showPuzzle(bonusPuzzle);
   
   try {
-    await initiallySolvePuzzle(puzzle);
-    await initiallySolvePuzzle(bonusPuzzle);
+    await initiallySolvePuzzle(puzzle, view1);
+    await initiallySolvePuzzle(bonusPuzzle, view2);
   } catch (error) {
     results.hidden = false;
     results.innerHTML =
