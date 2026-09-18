@@ -1913,14 +1913,16 @@ async function initiallySolvePuzzle(puzzle, view) {
     "finding the first optimal solution…"
   );
   
-  console.log(puzzle);
-  let solution = await puzzleSolver.solve();
+  let optimalScore = puzzle.optimalScore ? puzzle.optimalScore : MIN_SCORE;
+  let solution = await puzzleSolver.solve(optimalScore);
 
   if (!solution) {
     view.status.querySelector("small").textContent =
       "No legal solution found";
     return;
   }
+  
+  optimalScore = solution.score;
   
   puzzleSolver.blacklistSolution(solution);
   solutions.push(solution);
@@ -1933,7 +1935,7 @@ async function initiallySolvePuzzle(puzzle, view) {
       "finding next optimal solution…"
     );
     
-    solution = await puzzleSolver.solve();
+    solution = await puzzleSolver.solve(optimalScore);
     if(!solution) {
       
       exhausted = true;
@@ -1984,7 +1986,7 @@ async function initiallySolvePuzzle(puzzle, view) {
         "finding next optimal solution…"
       );
       
-      const solution = await puzzleSolver.solve();
+      const solution = await puzzleSolver.solve(optimalScore);
       if(solution) {
       
         puzzleSolver.blacklistSolution(solution);
