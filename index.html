@@ -17,14 +17,10 @@
       }
   
       var w=window.open('about:blank','_blank');
-  
-      var d=(window.__DAILY_LEVELS__||[])
-        .filter(function(x){
-          return String(x.dayNumber)===String(l.dayNumber)||x.id===l.id;
-        })[0]||{};
-  
-      var bid=l.bonusId||d.bonusId||(l.bonus&&l.bonus.id);
-  
+      var bonus = (l.hasBonus === undefined ? false : Boolean(l.hasBonus))
+        || l.bonusId !== undefined
+        || l.bonusOptimalScore !== undefined;
+      
       var enc=function(o){
         var a=new TextEncoder().encode(JSON.stringify(o)),s='';
         for(var i=0;i<a.length;i++)s+=String.fromCharCode(a[i]);
@@ -40,14 +36,14 @@
         else location.href=u;
       };
   
-      if(bid){
+      if(bonus){
         fetch('/api/daily/bonus/'+encodeURIComponent(l.id))
           .then(function(r){
             if(!r.ok) throw Error('Bonus request failed ('+r.status+')');
             return r.json();
           })
           .then(function(b){
-            b.type=l.bonusType||d.bonusType||(l.bonus&&l.bonus.type)||'default';
+            b.type=l.bonusType||b.bonusType||(l.bonus&&l.bonus.type)||'default';
   
             var names={
               costlywalls:'Costly Walls',
