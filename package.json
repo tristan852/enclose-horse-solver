@@ -1,0 +1,30 @@
+{
+  "name": "enclose-horse-solver-live-repo",
+  "version": "1.0.0",
+  "description": "The enclose.horse Solver is a standalone browser solver for [enclose.horse](https://enclose.horse/). It runs locally in the browser and supports the main puzzles and all bonus puzzle types.",
+  "main": "index.js",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/tristan852/enclose-horse-solver.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "module",
+  "bugs": {
+    "url": "https://github.com/tristan852/enclose-horse-solver/issues"
+  },
+  "homepage": "https://github.com/tristan852/enclose-horse-solver#readme",
+  "dependencies": {
+    "coi-serviceworker": "^0.1.7",
+    "or-tools-wasm": "^0.9.1"
+  },
+  "devDependencies": {
+    "vite": "^8.3.0"
+  }
+}

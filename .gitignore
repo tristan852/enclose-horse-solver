@@ -23,6 +23,4 @@ pnpm-debug.log*
 Thumbs.db
 
 # Other stuff
-package.json
-package-lock.json
 .idea/
