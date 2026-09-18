@@ -1736,6 +1736,7 @@ function renderSolution(card, solution) {
     }
   });
 
+  console.log(solution)
   console.log(walls);
 
   [...board.children].forEach((cell, index) => {
