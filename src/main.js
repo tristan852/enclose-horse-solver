@@ -1422,15 +1422,14 @@ class PuzzleSolver {
     const solver =
       this.model;
 
-    console.log(
-      "Starting SCIP solve..."
-    );
+    console.log("Starting SCIP solve...");
+    console.log(`  Variables:    ${solver.NumVariables()}`);
+    console.log(`  Constraints:  ${solver.NumConstraints()}`);
 
     /*
      * or-tools-wasm Solve() returns a Promise.
      */
-    const status =
-      await solver.Solve();
+    const status = await solver.Solve();
 
     const statusName =
       status === MPSolver.OPTIMAL
