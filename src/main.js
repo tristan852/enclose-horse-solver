@@ -1110,7 +1110,7 @@ class PuzzleSolver {
     );
 
     const flow =
-      this.model.IntVar(
+      this.model.NumVar(
         0,
         maxFlow,
         name
@@ -1186,7 +1186,7 @@ class PuzzleSolver {
     );
 
     const flow =
-      this.model.IntVar(
+      this.model.NumVar(
         0,
         maxFlow,
         name
