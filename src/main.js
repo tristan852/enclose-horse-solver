@@ -1802,7 +1802,7 @@ function createPuzzleCard(puzzle) {
   card.innerHTML = `
     <h2>${title}</h2>
     <div class="meta">
-      Puzzle ${puzzle.id || ""} · ${puzzle.width} x ${puzzle.height} · wall budget ${puzzle.budget}
+      Puzzle ${puzzle.id || ""} · ${width} x ${height} · wall budget ${puzzle.budget}
     </div>
   `;
 
