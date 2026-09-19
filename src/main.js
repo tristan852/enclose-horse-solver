@@ -1818,6 +1818,12 @@ function createPuzzleCard(puzzle) {
     G: "🍎",
     S: "🐝"
   };
+  
+  const titles = {
+    C: "Cherry +3",
+    G: "Golden Apple +10",
+    S: "Bee Swarm -5"
+  };
 
   rows.forEach((row, y) => {
     [...row].forEach((symbol, x) => {
@@ -1844,6 +1850,8 @@ function createPuzzleCard(puzzle) {
         cell.title = `Portal ${symbol}`;
       } else {
         cell.textContent = symbols[symbol] || "";
+        
+        if(titles[symbol]) cell.title = titles[symbol];
       }
 
       board.append(cell);
