@@ -1356,14 +1356,6 @@ class PuzzleSolver {
     } = this;
     
     if(true) {
-      
-      addConstraint(
-            model,
-            [],
-            0,
-            POS_INF,
-            "blacklist"
-          );
           
       return;
     }
@@ -1613,8 +1605,8 @@ class PuzzleSolver {
           .Value()
       );
 
-    this.optimalScoreConstraint.SetLb(roundedObjective);
-    this.optimalScoreConstraint.SetUb(roundedObjective);
+    // this.optimalScoreConstraint.SetLb(roundedObjective);
+    // this.optimalScoreConstraint.SetUb(roundedObjective);
 
     return {
       puzzle,
