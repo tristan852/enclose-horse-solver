@@ -1833,7 +1833,7 @@ function createPuzzleCard(puzzle) {
   
     try {
       await navigator.clipboard.writeText(title);
-      console.log(title);
+      console.log(puzzle);
   
       button.innerHTML = "✓";
   
