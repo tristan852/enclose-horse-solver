@@ -1921,8 +1921,6 @@ function createPuzzleCard(puzzle) {
     copying = true;
   
     try {
-      console.log(view);
-    
       const data = {
         map: formatBoard(puzzle, view.solution),
         budget: puzzle.budget
