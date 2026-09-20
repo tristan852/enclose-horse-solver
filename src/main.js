@@ -1822,6 +1822,27 @@ function createPuzzleCard(puzzle) {
       Puzzle ${puzzle.id || ""} · ${width} x ${height} · wall budget ${puzzle.budget}
     </div>
   `;
+  
+  card.querySelector(".copy-puzzle").addEventListener("click", async () => {
+    const button = card.querySelector(".copy-puzzle");
+  
+    try {
+      await navigator.clipboard.writeText(title);
+  
+      button.innerHTML = "✓";
+  
+      setTimeout(() => {
+        button.innerHTML = `
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <rect x="8" y="8" width="11" height="11" rx="2"></rect>
+            <path d="M16 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h2"></path>
+          </svg>
+        `;
+      }, 1000);
+    } catch (err) {
+      console.error("Failed to copy puzzle:", err);
+    }
+  });
 
   const board = document.createElement("div");
   board.className = "board";
