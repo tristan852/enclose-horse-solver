@@ -1749,7 +1749,7 @@ function renderSolution(card, solution) {
     }
   });
   
-  console.log(solution);
+  const isCostlyWalls = solution.puzzle.type === "COSTLY_WALLS";
 
   [...board.children].forEach((cell, index) => {
     
@@ -1763,7 +1763,7 @@ function renderSolution(card, solution) {
       enclosed.has(index) && !walls.has(index)
     );
     
-    if(cell.classList.contains("wall")) cell.title = "Test";
+    if(cell.classList.contains("wall")) cell.title = isCostlyWalls ? "Wall -6" : "Wall";
   });
 
   card.querySelector("strong").textContent = solution.score;
