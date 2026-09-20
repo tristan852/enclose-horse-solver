@@ -1430,6 +1430,7 @@ class PuzzleSolver {
      * or-tools-wasm Solve() returns a Promise.
      */
     const status = await solver.Solve();
+    console.log("db");
 
     const statusName =
       status === MPSolver.OPTIMAL
