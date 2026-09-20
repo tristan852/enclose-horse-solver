@@ -1354,6 +1354,19 @@ class PuzzleSolver {
       puzzle,
       model,
     } = this;
+    
+    if(true) {
+      
+      addConstraint(
+            model,
+            [],
+            0,
+            POS_INF,
+            "blacklist"
+          );
+          
+      return;
+    }
 
     let wallsUsed = 0;
     const terms = [];
