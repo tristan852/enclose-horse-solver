@@ -1627,7 +1627,7 @@ function formatBoard(puzzle, solution) {
         { length: puzzle.width },
         (_, x) =>
           solution.isWall[x][y]
-            ? "#"
+            ? "W"
             : puzzle.tile(x, y).char
       ).join("")
   ).join("\n");
@@ -1848,7 +1848,7 @@ function createPuzzleCard(puzzle) {
 
       const isPortal =
         !symbols[symbol] &&
-        ![".", "#", "~"].includes(symbol);
+        ![".", "#", "W", "~"].includes(symbol);
 
       cell.className =
         "cell" +
