@@ -337,6 +337,40 @@
   <script src="./coi-serviceworker.js"></script>
   <script type="module" src="/src/main.js"></script>
 </head>
-<body><main class="app"><header class="brand"><div class="logo">♞</div><div><h1>enclose.horse solver</h1><p>Install once, then solve any open puzzle with one click.</p></div></header>
-<section id="install" class="install"><h2>Install the solver bookmark</h2><p>Drag the button below to your bookmarks bar. Then open any <code>enclose.horse/play/…</code> puzzle and click the bookmark.</p><a id="bookmark" href="#" draggable="true">♞ Solve this enclose.horse puzzle</a><small>Popup blockers may ask you to allow the solver tab once.</small></section>
-<section id="results" hidden></section></main></body></html>
+<body>
+<main class="app">
+  <header class="brand">
+    <a href="./" class="brand-link" aria-label="enclose.horse solver home">
+      <div class="logo">♞</div>
+      <div>
+        <h1>enclose.horse solver</h1>
+        <p>Install once, then solve or create any puzzle with one click.</p>
+      </div>
+    </a>
+  </header>
+
+  <section id="install" class="install">
+    <h2>Bookmarks</h2>
+
+    <p>
+      Add these buttons to your bookmarks bar. Then open an
+      <code>enclose.horse</code> puzzle and use the appropriate bookmark.
+    </p>
+
+    <a id="bookmark" href="#" draggable="true">
+      ♞ Solve this enclose.horse puzzle
+    </a>
+
+    <a id="editor-bookmark" href="#" draggable="true">
+      ✎ Paste puzzle into level editor
+    </a>
+
+    <small>
+      Popup blockers may ask you to allow the solver tab once.
+    </small>
+  </section>
+
+  <section id="results" hidden></section>
+</main>
+</body>
+</html>
