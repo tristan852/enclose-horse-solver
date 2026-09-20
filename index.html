@@ -108,6 +108,7 @@
     }
   
     .level {
+      position: relative;
       padding: 25px 0 30px;
       border-top: 1px solid var(--line);
     }
@@ -128,6 +129,15 @@
     .level h2 {
       margin: 0 0 6px;
       font-size: 19px;
+    }
+    
+    .copy-puzzle {
+      position: absolute;
+      top: 12px;
+      right: 12px;
+      width: 30px;
+      height: 30px;
+      padding: 0 !important;
     }
   
     .board-wrap {
@@ -214,7 +224,8 @@
       gap: 7px;
     }
   
-    .controls button {
+    .controls button,
+    .copy-puzzle {
       border: 1px solid var(--line);
       border-radius: 8px;
       background: #242a2f;
@@ -229,24 +240,28 @@
         box-shadow 0.15s ease;
     }
   
-    .controls button:hover:not(:disabled) {
+    .controls button:hover:not(:disabled),
+    .copy-puzzle:hover:not(:disabled) {
       background: #30383e;
       border-color: #59636b;
       box-shadow: 0 3px 10px #0005;
       transform: translateY(-1px);
     }
   
-    .controls button:active:not(:disabled) {
+    .controls button:active:not(:disabled),
+    .copy-puzzle:active:not(:disabled) {
       transform: translateY(0);
       box-shadow: none;
     }
   
-    .controls button:focus-visible {
+    .controls button:focus-visible,
+    .copy-puzzle:focus-visible {
       outline: 2px solid var(--gold);
       outline-offset: 2px;
     }
   
-    .controls button:disabled {
+    .controls button:disabled,
+    .copy-puzzle:disabled {
       cursor: not-allowed;
       opacity: 0.38;
       box-shadow: none;
