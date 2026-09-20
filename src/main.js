@@ -1807,6 +1807,12 @@ function createPuzzleCard(puzzle) {
 
   card.innerHTML = `
     <h2>${title}</h2>
+    <button
+      class="copy-puzzle"
+      type="button"
+      aria-label="Copy puzzle"
+      title="Copy puzzle"
+    >⧉</button>
     <div class="meta">
       Puzzle ${puzzle.id || ""} · ${width} x ${height} · wall budget ${puzzle.budget}
     </div>
