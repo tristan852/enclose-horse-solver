@@ -1908,6 +1908,8 @@ function createPuzzleCard(puzzle) {
 
 function showPuzzle(puzzle) {
   const view = createPuzzleCard(puzzle.level);
+  
+  setWorking(view.status, "waiting for main round to be solved…");
 
   results.append(view.card);
 
