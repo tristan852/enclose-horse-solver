@@ -1618,7 +1618,7 @@ class PuzzleSolver {
 function formatBoard(puzzle, solution) {
   if(!solution) return puzzle.map;
 
-  return Array.from(
+  let m = Array.from(
     { length: puzzle.height },
     (_, y) =>
       Array.from(
@@ -1629,6 +1629,10 @@ function formatBoard(puzzle, solution) {
             : puzzle.tile(x, y).char
       ).join("")
   ).join("\n");
+  
+  console.log(m);
+  
+  return m;
 }
 
 function logPuzzle(puzzle) {
