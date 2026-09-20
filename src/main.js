@@ -1808,8 +1808,8 @@ function createPuzzleCard(puzzle) {
     <button
       class="copy-puzzle"
       type="button"
-      aria-label="Copy puzzle"
-      title="Copy puzzle"
+      aria-label="Copy puzzle or solution"
+      title="Copy puzzle or solution"
     >
       <svg viewBox="0 0 24 24" aria-hidden="true">
         <rect x="8" y="8" width="11" height="11" rx="2"></rect>
