@@ -1748,8 +1748,12 @@ function renderSolution(card, solution) {
       reachableCells.add(index);
     }
   });
+  
+  console.log(solution);
 
   [...board.children].forEach((cell, index) => {
+    
+    if(cell.classList.contains("wall")) cell.removeAttribute("title");
     
     cell.classList.toggle("wall", walls.has(index));
     cell.classList.toggle("solution", walls.has(index) && reachableCells.has(index));
@@ -1758,6 +1762,8 @@ function renderSolution(card, solution) {
       "enclosed",
       enclosed.has(index) && !walls.has(index)
     );
+    
+    if(cell.classList.contains("wall")) cell.title = "Test";
   });
 
   card.querySelector("strong").textContent = solution.score;
