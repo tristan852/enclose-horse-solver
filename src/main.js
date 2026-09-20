@@ -1823,8 +1823,13 @@ function createPuzzleCard(puzzle) {
     </div>
   `;
   
+  let copying = false;
+  
   card.querySelector(".copy-puzzle").addEventListener("click", async () => {
     const button = card.querySelector(".copy-puzzle");
+  
+    if (copying) return;
+    copying = true;
   
     try {
       await navigator.clipboard.writeText(title);
@@ -1838,8 +1843,11 @@ function createPuzzleCard(puzzle) {
             <path d="M16 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h2"></path>
           </svg>
         `;
+        copying = false;
       }, 1000);
+  
     } catch (err) {
+      copying = false;
       console.error("Failed to copy puzzle:", err);
     }
   });
