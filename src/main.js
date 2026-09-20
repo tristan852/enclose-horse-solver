@@ -1794,10 +1794,10 @@ function createPuzzleCard(puzzle) {
     card.style.setProperty(
       "--bonus-bg",
       puzzle.type === "lovebirds"
-        ? "#182b2b"
+        ? "#3b1f2b"
         : puzzle.type === "loversquarrel"
-          ? "#2d2025"
-          : "#302719"
+          ? "#3b1518"
+          : "#3b2919"
     );
   }
 
