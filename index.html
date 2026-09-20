@@ -112,6 +112,10 @@
       margin-top: 10px;
     }
   
+    #editor-bookmark {
+      margin-top: 26px;
+    }
+  
     .level {
       position: relative;
       padding: 25px 0 30px;
@@ -334,9 +338,11 @@
   </style>
   <script>
     const bookmarklet=`javascript:(function(){var l=window.__LEVEL__;if(!l){alert('Open an enclose.horse puzzle first.');return;}var w=window.open('about:blank','_blank');var bonus=(l.hasBonus===undefined?false:Boolean(l.hasBonus))||l.bonusId!==undefined||l.bonusOptimalScore!==undefined;var enc=function(o){var a=new TextEncoder().encode(JSON.stringify(o)),s='';for(var i=0;i<a.length;i++)s+=String.fromCharCode(a[i]);return btoa(s);};var done=function(b){var u="https://tristan852.github.io/enclose-horse-solver/"+"?level="+encodeURIComponent(enc(l))+(b?"&bonus="+encodeURIComponent(enc(b)):"");if(w&&!w.closed)w.location=u;else location.href=u;};if(bonus){fetch('/api/daily/bonus/'+encodeURIComponent(l.id)).then(function(r){if(!r.ok)throw Error('Bonus request failed ('+r.status+')');return r.json();}).then(function(b){b.type=l.bonusType||b.bonusType||(l.bonus&&l.bonus.type)||'default';var names={costlywalls:'Costly Walls',lovebirds:'Lovebirds',loversquarrel:'Lovers Quarrel'};b.name='Bonus round: '+(names[String(b.type).toLowerCase()]||String(b.type).replace(/[-_]+/g,' '));done(b);}).catch(function(e){if(w&&!w.closed)w.close();alert('Could not prepare this puzzle: '+e.message);});}else{done(null);}})()`;
+    const bookmarklet2=``;
     
     document.addEventListener("DOMContentLoaded", function() {
       document.getElementById("bookmark").href = bookmarklet;
+      document.getElementById("editor-bookmark").href = bookmarklet2;
     });
   </script>
   <script src="./coi-serviceworker.js"></script>
