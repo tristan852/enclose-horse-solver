@@ -1717,7 +1717,6 @@ function renderSolution(view, solution) {
   const board = card.querySelector(".board");
   
   view.solution = solution;
-  console.log(view);
   
   function interleaveArrays(arrays) {
     if (arrays.length === 0) return [];
@@ -1827,41 +1826,6 @@ function createPuzzleCard(puzzle) {
     </div>
   `;
   
-  let copying = false;
-  
-  card.querySelector(".copy-puzzle").addEventListener("click", async () => {
-    const button = card.querySelector(".copy-puzzle");
-  
-    if (copying) return;
-    copying = true;
-  
-    try {
-      const data = {
-        map: puzzle.map,
-        budget: puzzle.budget
-      };
-      
-      const encoded = btoa(JSON.stringify(data));
-      await navigator.clipboard.writeText(encoded);
-  
-      button.innerHTML = "✓";
-  
-      setTimeout(() => {
-        button.innerHTML = `
-          <svg viewBox="0 0 24 24" aria-hidden="true">
-            <rect x="8" y="8" width="11" height="11" rx="2"></rect>
-            <path d="M16 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h2"></path>
-          </svg>
-        `;
-        copying = false;
-      }, 1000);
-  
-    } catch (err) {
-      copying = false;
-      console.error("Failed to copy puzzle:", err);
-    }
-  });
-
   const board = document.createElement("div");
   board.className = "board";
   board.style.gridTemplateColumns =
@@ -1947,13 +1911,52 @@ function createPuzzleCard(puzzle) {
 
   card.append(status);
 
-  return {
+  const view = {
     card,
     board,
     status,
     width,
     height
   };
+  
+  let copying = false;
+  
+  card.querySelector(".copy-puzzle").addEventListener("click", async () => {
+    const button = card.querySelector(".copy-puzzle");
+  
+    if(copying) return;
+    copying = true;
+  
+    try {
+      console.log(view);
+    
+      const data = {
+        map: puzzle.map,
+        budget: puzzle.budget
+      };
+      
+      const encoded = btoa(JSON.stringify(data));
+      await navigator.clipboard.writeText(encoded);
+  
+      button.innerHTML = "✓";
+  
+      setTimeout(() => {
+        button.innerHTML = `
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <rect x="8" y="8" width="11" height="11" rx="2"></rect>
+            <path d="M16 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h2"></path>
+          </svg>
+        `;
+        copying = false;
+      }, 1000);
+  
+    } catch (err) {
+      copying = false;
+      console.error("Failed to copy puzzle:", err);
+    }
+  });
+
+  return view;
 }
 
 function showPuzzle(puzzle) {
