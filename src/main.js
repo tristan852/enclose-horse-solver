@@ -1832,8 +1832,13 @@ function createPuzzleCard(puzzle) {
     copying = true;
   
     try {
-      await navigator.clipboard.writeText(title);
-      console.log(puzzle);
+      const data = {
+        map: puzzle.map,
+        budget: puzzle.budget
+      };
+      
+      const encoded = btoa(JSON.stringify(data));
+      await navigator.clipboard.writeText(encoded);
   
       button.innerHTML = "✓";
   
