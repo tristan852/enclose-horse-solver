@@ -1820,6 +1820,8 @@ function createPuzzleCard(puzzle) {
   };
   
   const titles = {
+    H: "Neighthan",
+    U: "Unicorn",
     C: "Cherry +3",
     G: "Golden Apple +10",
     S: "Bee Swarm -5"
