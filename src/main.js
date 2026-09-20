@@ -1616,6 +1616,8 @@ class PuzzleSolver {
 }
 
 function formatBoard(puzzle, solution) {
+  if(!solution) return puzzle.map;
+
   return Array.from(
     { length: puzzle.height },
     (_, y) =>
@@ -1922,7 +1924,7 @@ function createPuzzleCard(puzzle) {
       console.log(view);
     
       const data = {
-        map: puzzle.map,
+        map: formatBoard(puzzle, view.solution),
         budget: puzzle.budget
       };
       
