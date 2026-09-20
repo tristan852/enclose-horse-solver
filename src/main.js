@@ -1712,8 +1712,12 @@ function resizeBoard(card, width, height) {
   );
 }
 
-function renderSolution(card, solution) {
+function renderSolution(view, solution) {
+  const card = view.card;
   const board = card.querySelector(".board");
+  
+  view.solution = solution;
+  console.log(view);
   
   function interleaveArrays(arrays) {
     if (arrays.length === 0) return [];
@@ -1996,7 +2000,7 @@ async function initiallySolvePuzzle(puzzle, view) {
   
   puzzleSolver.blacklistSolution(solution);
   solutions.push(solution);
-  renderSolution(view.card, solution);
+  renderSolution(view, solution);
   
   setWorking(
     view.status,
@@ -2017,7 +2021,7 @@ async function initiallySolvePuzzle(puzzle, view) {
   }
 
   function update() {
-    renderSolution(view.card, solutions[solutionIndex]);
+    renderSolution(view, solutions[solutionIndex]);
 
     view.status.querySelector("small").textContent =
       `solution ${solutionIndex + 1}/${solutions.length}${exhausted ? "" : "+"}`;
@@ -2062,7 +2066,7 @@ async function initiallySolvePuzzle(puzzle, view) {
         puzzleSolver.blacklistSolution(solution);
         solutions.push(solution);
         
-        renderSolution(view.card, solution);
+        renderSolution(view, solution);
         
         setWorking(
           view.status,
