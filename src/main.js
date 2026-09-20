@@ -1630,6 +1630,8 @@ function formatBoard(puzzle, solution) {
       ).join("")
   ).join("\n");
   
+  console.log(puzzle);
+  console.log(solution);
   console.log(m);
   
   return m;
