@@ -1615,27 +1615,18 @@ class PuzzleSolver {
   }
 }
 
-function formatBoard(
-  puzzle,
-  solution
-) {
+function formatBoard(puzzle, solution) {
   return Array.from(
-    {
-      length:
-        puzzle.height,
-    },
+    { length: puzzle.height },
     (_, y) =>
       Array.from(
-        {
-          length:
-            puzzle.width,
-        },
+        { length: puzzle.width },
         (_, x) =>
           solution.isWall[x][y]
             ? "#"
             : puzzle.tile(x, y).char
       ).join("")
-  );
+  ).join("\n");
 }
 
 function logPuzzle(puzzle) {
