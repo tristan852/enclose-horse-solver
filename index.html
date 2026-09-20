@@ -131,25 +131,6 @@
       font-size: 19px;
     }
     
-    .copy-puzzle {
-      position: absolute;
-      top: 12px;
-      right: 12px;
-      width: 30px;
-      height: 30px;
-      padding: 0 !important;
-    }
-    
-    .copy-puzzle svg {
-      width: 16px;
-      height: 16px;
-      fill: none;
-      stroke: currentColor;
-      stroke-width: 1.8;
-      stroke-linecap: round;
-      stroke-linejoin: round;
-    }
-  
     .board-wrap {
       padding: 3px;
       display: flex;
@@ -298,6 +279,27 @@
       border-top-color: var(--gold);
       border-radius: 50%;
       animation: spin 0.7s linear infinite;
+    }
+    
+    .copy-puzzle {
+      position: absolute;
+      top: 12px;
+      right: 12px;
+      width: 30px;
+      height: 30px;
+      padding: 0 !important;
+      display: grid;
+      place-items: center;
+    }
+    
+    .copy-puzzle svg {
+      width: 16px;
+      height: 16px;
+      fill: none;
+      stroke: currentColor;
+      stroke-width: 1.8;
+      stroke-linecap: round;
+      stroke-linejoin: round;
     }
   
     @keyframes spin {
