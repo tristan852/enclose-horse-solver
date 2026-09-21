@@ -1941,7 +1941,7 @@ function createPuzzleCard(puzzle) {
           </svg>
         `;
         copying = false;
-      }, 3000);
+      }, 2000);
   
     } catch (err) {
       copying = false;
