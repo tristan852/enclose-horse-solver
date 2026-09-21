@@ -469,7 +469,7 @@ class PuzzleSolver {
 
     this.model =
       MPSolver.CreateSolver(
-        "CBC"
+        "SCIP"
       );
 
     if (!this.model) {
