@@ -1834,7 +1834,7 @@ function createPuzzleCard(puzzle) {
       </svg>
     </button>
     <div class="meta">
-      Puzzle ${puzzle.id || ""} · ${width} x ${height} · wall budget ${puzzle.budget}
+      Puzzle ${puzzle.id || ""} · ${width} x ${height} · wall budget: ${puzzle.budget}
     </div>
   `;
   
@@ -2035,6 +2035,8 @@ async function initiallySolvePuzzle(puzzle, view) {
 
   function update() {
     renderSolution(view, solutions[solutionIndex]);
+    
+    console.log(solutions[solutionIndex]);
 
     view.status.querySelector("small").textContent =
       `solution ${solutionIndex + 1}/${solutions.length}${exhausted ? "" : "+"}`;
