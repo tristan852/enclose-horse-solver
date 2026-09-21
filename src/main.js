@@ -1464,7 +1464,7 @@ class PuzzleSolver {
                   : "NOT_SOLVED";
 
     console.log(`  Status:       ${statusName}`);
-    console.log(`  Time:         ${solver.wall_time()}`);
+    console.log(`  Time:         ${(solver.wall_time() / 1000).toFixed(2)}s`);
 
     if (
       status !== MPSolver.OPTIMAL
