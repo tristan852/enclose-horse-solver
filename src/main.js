@@ -2036,10 +2036,8 @@ async function initiallySolvePuzzle(puzzle, view) {
   function update() {
     renderSolution(view, solutions[solutionIndex]);
     
-    console.log(solutions[solutionIndex]);
-
     view.status.querySelector("small").textContent =
-      `solution ${solutionIndex + 1}/${solutions.length}${exhausted ? "" : "+"}`;
+      `solution ${solutionIndex + 1}/${solutions.length}${exhausted ? "" : "+"} ({solutions[solutionIndex].wallsUsed}/{solutions[solutionIndex].puzzle.wallBudget} walls used)`;
 
     const [previous, next] =
       view.status.querySelectorAll("button");
