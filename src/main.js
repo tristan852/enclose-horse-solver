@@ -1354,11 +1354,6 @@ class PuzzleSolver {
       puzzle,
       model,
     } = this;
-    
-    // if(true) {
-    //       
-    //   return;
-    // }
 
     let wallsUsed = 0;
     const terms = [];
@@ -1435,7 +1430,6 @@ class PuzzleSolver {
      * or-tools-wasm Solve() returns a Promise.
      */
     const status = await solver.Solve();
-    console.log("db");
 
     const statusName =
       status === MPSolver.OPTIMAL
@@ -1605,8 +1599,8 @@ class PuzzleSolver {
           .Value()
       );
 
-    // this.optimalScoreConstraint.SetLb(roundedObjective);
-    // this.optimalScoreConstraint.SetUb(roundedObjective);
+    this.optimalScoreConstraint.SetLb(roundedObjective);
+    this.optimalScoreConstraint.SetUb(roundedObjective);
 
     return {
       puzzle,
