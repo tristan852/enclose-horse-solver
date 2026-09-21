@@ -932,6 +932,9 @@ class PuzzleSolver {
         ) {
           continue;
         }
+        
+        const neighbourHorse = [];
+        const neighbourUnicorn = [];
 
         for (
           const [dx, dy]
@@ -965,6 +968,9 @@ class PuzzleSolver {
 
           const neighbourWall =
             this.wall[nx][ny];
+
+          neighbourHorse.push(this.horse[nx][ny]);
+          neighbourUnicorn.push(this.unicorn[nx][ny]);
 
           if (
             horseReachable
@@ -1013,42 +1019,53 @@ class PuzzleSolver {
             const [nx, ny] =
               match;
 
-            const distance =
-              Math.abs(nx - x) +
-              Math.abs(ny - y);
+            neighbourHorse.push(this.horse[nx][ny]);
+            neighbourUnicorn.push(this.unicorn[nx][ny]);
 
-            if (distance > 1) {
-              if (
-                horseReachable
-              ) {
-                this.addPortalEdge(
-                  x,
-                  y,
-                  nx,
-                  ny,
-                  this.horse,
-                  this.horseFlowBalance,
-                  maxFlow,
-                  `portalFlow${x},${y},${nx},${ny}`
-                );
-              }
+            if (
+              horseReachable
+            ) {
+              this.addPortalEdge(
+                x,
+                y,
+                nx,
+                ny,
+                this.horse,
+                this.horseFlowBalance,
+                maxFlow,
+                `portalFlow${x},${y},${nx},${ny}`
+              );
+            }
 
-              if (
-                unicornReachable
-              ) {
-                this.addPortalEdge(
-                  x,
-                  y,
-                  nx,
-                  ny,
-                  this.unicorn,
-                  this.unicornFlowBalance,
-                  maxFlow2,
-                  `portalFlow2${x},${y},${nx},${ny}`
-                );
-              }
+            if (
+              unicornReachable
+            ) {
+              this.addPortalEdge(
+                x,
+                y,
+                nx,
+                ny,
+                this.unicorn,
+                this.unicornFlowBalance,
+                maxFlow2,
+                `portalFlow2${x},${y},${nx},${ny}`
+              );
             }
           }
+        }
+        
+        if (is(type, TILE.GRASS)) {
+          addConstraint(
+            this.model,
+            [
+              [this.wall[x][y], 1],
+              ...neighbourHorse.map(variable => [variable, -1]),
+              ...neighbourUnicorn.map(variable => [variable, -1]),
+            ],
+            NEG_INF,
+            0,
+            `wallNeedsReachableNeighbour${x},${y}`
+          );
         }
       }
     }
