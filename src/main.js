@@ -1355,10 +1355,10 @@ class PuzzleSolver {
       model,
     } = this;
     
-    if(true) {
-          
-      return;
-    }
+    // if(true) {
+    //       
+    //   return;
+    // }
 
     let wallsUsed = 0;
     const terms = [];
