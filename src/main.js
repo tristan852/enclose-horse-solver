@@ -1463,10 +1463,8 @@ class PuzzleSolver {
                   ? "MODEL_INVALID"
                   : "NOT_SOLVED";
 
-    console.log(
-      "Solver status:",
-      statusName
-    );
+    console.log(`  Status:       ${statusName}`);
+    console.log(`  Time:         ${solver.wall_time()}`);
 
     if (
       status !== MPSolver.OPTIMAL
