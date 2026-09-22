@@ -1,7 +1,4 @@
-import {
-  initMPSolver,
-  MPSolver,
-} from "or-tools-wasm/mp-solver";
+import clingo from "clingo-wasm";
 
 const DIRECTIONS = Object.freeze([
   [1, 0],
@@ -11,8 +8,6 @@ const DIRECTIONS = Object.freeze([
 ]);
 
 const MIN_SCORE = -2147483648;
-const NEG_INF = -1_000_000_000;
-const POS_INF = 1_000_000_000;
 
 const TILE = Object.freeze({
   GRASS: "GRASS",
@@ -42,74 +37,6 @@ function makeGrid(width, height, value = null) {
   );
 }
 
-function addConstraint(
-  solver,
-  terms,
-  lb,
-  ub,
-  name = ""
-) {
-  const constraint =
-    solver.Constraint(lb, ub, name);
-
-  for (const [variable, coefficient] of terms) {
-    if (coefficient !== 0) {
-      constraint.SetCoefficient(
-        variable,
-        coefficient
-      );
-    }
-  }
-
-  return constraint;
-}
-
-function equal(
-  solver,
-  terms,
-  value,
-  name = ""
-) {
-  return addConstraint(
-    solver,
-    terms,
-    value,
-    value,
-    name
-  );
-}
-
-function atMostOne(
-  solver,
-  a,
-  b,
-  name = ""
-) {
-  return addConstraint(
-    solver,
-    [
-      [a, 1],
-      [b, 1],
-    ],
-    NEG_INF,
-    1,
-    name
-  );
-}
-
-function sumVariables(variables) {
-  return variables.map(variable => [
-    variable,
-    1,
-  ]);
-}
-
-function valueOf(variable) {
-  return (
-    variable.solution_value() >= 0.5
-  );
-}
-
 function decodeBase64Json(encoded) {
   const normalized = encoded
     .replace(/-/g, "+")
@@ -121,7 +48,6 @@ function decodeBase64Json(encoded) {
   );
 
   const binary = atob(padded);
-
   const bytes = Uint8Array.from(
     binary,
     char => char.charCodeAt(0)
@@ -133,10 +59,7 @@ function decodeBase64Json(encoded) {
 }
 
 function tileType(char) {
-  return Object.hasOwn(
-    TILE_BY_CHAR,
-    char
-  )
+  return Object.hasOwn(TILE_BY_CHAR, char)
     ? TILE_BY_CHAR[char]
     : TILE.PORTAL;
 }
@@ -177,8 +100,8 @@ function tileScore(type) {
 }
 
 function puzzleType(type) {
-  if(type == null) return "default";
-  
+  if (type == null) return "DEFAULT";
+
   switch (type) {
     case "costlywalls":
     case "costly_walls":
@@ -200,107 +123,57 @@ function puzzleType(type) {
   }
 }
 
-function parsePuzzle(
-  level,
-  isBonus = false
-) {
-  if (
-    !level ||
-    typeof level.map !== "string"
-  ) {
-    throw new Error(
-      "Invalid puzzle: missing map."
-    );
+function parsePuzzle(level, isBonus = false) {
+  if (!level || typeof level.map !== "string") {
+    throw new Error("Invalid puzzle: missing map.");
   }
 
-  const rows = level.map
-    .replace(/\r/g, "")
-    .split("\n");
+  const rows = level.map.replace(/\r/g, "").split("\n");
 
-  if (
-    rows.length === 0 ||
-    rows[0].length === 0
-  ) {
-    throw new Error(
-      "Invalid puzzle: empty map."
-    );
+  if (rows.length === 0 || rows[0].length === 0) {
+    throw new Error("Invalid puzzle: empty map.");
   }
 
   const width = rows[0].length;
   const height = rows.length;
 
-  if (
-    !rows.every(
-      row => row.length === width
-    )
-  ) {
-    throw new Error(
-      "Invalid puzzle: map rows have different widths."
-    );
+  if (!rows.every(row => row.length === width)) {
+    throw new Error("Invalid puzzle: map rows have different widths.");
   }
 
-  const tiles = makeGrid(
-    width,
-    height
-  );
-
+  const tiles = makeGrid(width, height);
   const portals = new Map();
 
   for (let x = 0; x < width; x++) {
     for (let y = 0; y < height; y++) {
       const char = rows[y][x];
       const type = tileType(char);
-
       const tile = {
         x,
         y,
         char,
         type,
-        portalCharacter:
-          isPortal(type)
-            ? char
-            : null,
+        portalCharacter: isPortal(type) ? char : null,
       };
 
       tiles[x][y] = tile;
 
-      if (
-        tile.portalCharacter != null
-      ) {
-        const cells =
-          portals.get(
-            tile.portalCharacter
-          ) ?? [];
-
+      if (tile.portalCharacter != null) {
+        const cells = portals.get(tile.portalCharacter) ?? [];
         cells.push([x, y]);
-
-        portals.set(
-          tile.portalCharacter,
-          cells
-        );
+        portals.set(tile.portalCharacter, cells);
       }
     }
   }
 
   return {
     level,
-    
     width,
     height,
-
-    wallBudget: Number(
-      level.budget ?? 0
-    ),
-
+    wallBudget: Number(level.budget ?? 0),
     optimalScore:
-      level.optimalScore == null
-        ? null
-        : Number(level.optimalScore),
-
-    type: puzzleType(
-      isBonus ? level.bonusType : null
-    ),
-
+      level.optimalScore == null ? null : Number(level.optimalScore),
+    type: puzzleType(isBonus ? level.bonusType : null),
     tiles,
     portals,
 
@@ -313,1326 +186,277 @@ function parsePuzzle(
     },
 
     portalCharacter(x, y) {
-      return tiles[x][y]
-        .portalCharacter;
+      return tiles[x][y].portalCharacter;
     },
 
     matchingPortals(x, y) {
-      const character =
-        tiles[x][y]
-          .portalCharacter;
-
-      return character == null
-        ? []
-        : portals.get(character) ?? [];
+      const character = tiles[x][y].portalCharacter;
+      return character == null ? [] : portals.get(character) ?? [];
     },
   };
 }
 
-/*
- * Intentionally follows PuzzleSolver.java's
- * portal traversal:
- *
- * after finding the first matching portal,
- * traversal stops.
- */
-function explore(
-  puzzle,
-  x,
-  y,
-  reachable
-) {
-  if (reachable[x][y]) {
-    return;
-  }
-
-  reachable[x][y] = true;
-
-  for (const [dx, dy] of DIRECTIONS) {
-    const nx = x + dx;
-    const ny = y + dy;
-
-    if (
-      nx < 0 ||
-      nx >= puzzle.width ||
-      ny < 0 ||
-      ny >= puzzle.height
-    ) {
-      continue;
-    }
-
-    if (
-      isWater(
-        puzzle.tileType(nx, ny)
-      )
-    ) {
-      continue;
-    }
-
-    explore(
-      puzzle,
-      nx,
-      ny,
-      reachable
-    );
-  }
-
-  if (
-    !isPortal(
-      puzzle.tileType(x, y)
-    )
-  ) {
-    return;
-  }
-
-  for (
-    const [nx, ny]
-    of puzzle.matchingPortals(x, y)
-  ) {
-    if (
-      nx === x &&
-      ny === y
-    ) {
-      continue;
-    }
-
-    explore(
-      puzzle,
-      nx,
-      ny,
-      reachable
-    );
-
-    break;
+function modeAtom(type) {
+  switch (type) {
+    case "COSTLY_WALLS":
+      return "costly_walls";
+    case "LOVEBIRDS":
+      return "lovebirds";
+    case "LOVERS_QUARREL":
+      return "lovers_quarrel";
+    default:
+      return "normal";
   }
 }
 
-function calculateStaticReachability(
-  puzzle
-) {
-  const horse = makeGrid(
-    puzzle.width,
-    puzzle.height,
-    false
-  );
+function fact(name, ...args) {
+  return name + "(" + args.join(",") + ").";
+}
 
-  const unicorn = makeGrid(
-    puzzle.width,
-    puzzle.height,
-    false
-  );
+function generateFacts(puzzle) {
+  const facts = [
+    "% Generated instance facts for " + puzzle.width + "x" + puzzle.height + ".",
+    fact("mode", modeAtom(puzzle.type)),
+    fact("budget", puzzle.wallBudget),
+  ];
 
-  for (
-    let x = 0;
-    x < puzzle.width;
-    x++
-  ) {
-    for (
-      let y = 0;
-      y < puzzle.height;
-      y++
-    ) {
-      const type =
-        puzzle.tileType(x, y);
+  for (let x = 0; x < puzzle.width; x++) {
+    for (let y = 0; y < puzzle.height; y++) {
+      const type = puzzle.tileType(x, y);
 
-      if (
-        is(type, TILE.HORSE)
-      ) {
-        explore(
-          puzzle,
-          x,
-          y,
-          horse
-        );
-      } else if (
-        is(type, TILE.UNICORN)
-      ) {
-        explore(
-          puzzle,
-          x,
-          y,
-          unicorn
-        );
+      if (is(type, TILE.GRASS)) facts.push(fact("grass", x, y));
+      if (is(type, TILE.HORSE)) facts.push(fact("horse", x, y));
+      if (is(type, TILE.UNICORN)) facts.push(fact("unicorn", x, y));
+
+      const boundary =
+        x === 0 ||
+        x === puzzle.width - 1 ||
+        y === 0 ||
+        y === puzzle.height - 1;
+
+      if (boundary) facts.push(fact("boundary", x, y));
+      facts.push(fact("tile_score", x, y, tileScore(type)));
+    }
+  }
+
+  for (let x = 0; x < puzzle.width; x++) {
+    for (let y = 0; y < puzzle.height; y++) {
+      if (isWater(puzzle.tileType(x, y))) continue;
+
+      for (const [dx, dy] of DIRECTIONS) {
+        const nx = x + dx;
+        const ny = y + dy;
+
+        if (
+          nx < 0 ||
+          nx >= puzzle.width ||
+          ny < 0 ||
+          ny >= puzzle.height ||
+          isWater(puzzle.tileType(nx, ny))
+        ) {
+          continue;
+        }
+
+        facts.push(fact("adj", x, y, nx, ny));
       }
     }
   }
 
-  return {
-    horse,
-    unicorn,
-  };
+  for (const cells of puzzle.portals.values()) {
+    if (cells.length < 2) continue;
+
+    const [first, second] = cells;
+    facts.push(fact("portal_edge", first[0], first[1], second[0], second[1]));
+    facts.push(fact("portal_edge", second[0], second[1], first[0], first[1]));
+  }
+
+  return facts.join("\n") + "\n";
+}
+
+function parseAtomCoordinates(atoms, predicate) {
+  const coordinates = [];
+  const pattern = new RegExp("^" + predicate + "\\((-?\\d+),(-?\\d+)\\)$");
+
+  for (const atom of atoms) {
+    const match = pattern.exec(atom);
+    if (match) coordinates.push([Number(match[1]), Number(match[2])]);
+  }
+
+  return coordinates;
+}
+
+function coordinatesToGrid(width, height, coordinates) {
+  const grid = makeGrid(width, height, false);
+
+  for (const [x, y] of coordinates) {
+    if (x >= 0 && x < width && y >= 0 && y < height) {
+      grid[x][y] = true;
+    }
+  }
+
+  return grid;
+}
+
+function compareCosts(left, right) {
+  if (!left || !right || left.length !== right.length) return false;
+  return left.every((value, index) => value === right[index]);
 }
 
 class PuzzleSolver {
-  constructor(puzzle) {
+  constructor(puzzle, staticModel) {
     this.puzzle = puzzle;
-
-    this.model =
-      MPSolver.CreateSolver(
-        "SCIP"
-      );
-
-    if (!this.model) {
-      throw new Error(
-        "SCIP MPSolver backend is unavailable."
-      );
-    }
-
-    /*
-     * or-tools-wasm exposes SetNumThreads().
-     *
-     * This is optional because the package defaults
-     * to one thread, but explicitly setting it keeps
-     * the intended behavior.
-     */
-    const threadsSet =
-      this.model.SetNumThreads(1);
-
-    if (threadsSet === false) {
-      console.warn(
-        "SCIP did not accept SetNumThreads(1)."
-      );
-    }
-
-    this.wall = makeGrid(
-      puzzle.width,
-      puzzle.height
-    );
-
-    this.horse = makeGrid(
-      puzzle.width,
-      puzzle.height
-    );
-
-    this.unicorn = makeGrid(
-      puzzle.width,
-      puzzle.height
-    );
-
-    this.horseReachable = null;
-    this.unicornReachable = null;
-
-    this.horseFlowBalance =
-      makeGrid(
-        puzzle.width,
-        puzzle.height
-      );
-
-    this.unicornFlowBalance =
-      makeGrid(
-        puzzle.width,
-        puzzle.height
-      );
-
-    this.optimalScoreExpression = [];
-    this.optimalScoreConstraint = null;
-
-    this.initialize();
+    this.staticModel = staticModel;
+    this.solutions = [];
+    this.solutionIndex = 0;
+    this.enumerated = false;
+    this.exhausted = false;
   }
 
-  initialize() {
-    const {
-      puzzle,
-      model,
-    } = this;
+  async enumerateOptimalSolutions() {
+    if (this.enumerated) return;
 
-    const {
-      width,
-      height,
-    } = puzzle;
+    const program = this.staticModel + "\n" + generateFacts(this.puzzle);
+    const witnesses = [];
 
-    const allWalls = [];
-
-    /*
-     * Variables and static constraints.
-     */
-    for (
-      let x = 0;
-      x < width;
-      x++
-    ) {
-      for (
-        let y = 0;
-        y < height;
-        y++
-      ) {
-        const wall =
-          model.BoolVar(
-            `tileHasWall${x},${y}`
-          );
-
-        const horse =
-          model.BoolVar(
-            `tileIsHorseReachable${x},${y}`
-          );
-
-        const unicorn =
-          model.BoolVar(
-            `tileIsUnicornReachable${x},${y}`
-          );
-
-        this.wall[x][y] = wall;
-        this.horse[x][y] = horse;
-        this.unicorn[x][y] = unicorn;
-
-        allWalls.push(wall);
-
-        switch (puzzle.type) {
-          case "LOVEBIRDS":
-            equal(
-              model,
-              [
-                [horse, 1],
-                [unicorn, -1],
-              ],
-              0,
-              `lovebirds${x},${y}`
-            );
-            break;
-
-          case "LOVERS_QUARREL":
-            atMostOne(
-              model,
-              horse,
-              unicorn,
-              `loversQuarrel${x},${y}`
-            );
-            break;
-
-          default:
-            equal(
-              model,
-              [[unicorn, 1]],
-              0,
-              `noUnicorn${x},${y}`
-            );
-            break;
-        }
-
-        atMostOne(
-          model,
-          wall,
-          horse,
-          `wallHorse${x},${y}`
-        );
-
-        atMostOne(
-          model,
-          wall,
-          unicorn,
-          `wallUnicorn${x},${y}`
-        );
-
-        const type =
-          puzzle.tileType(x, y);
-
-        if (
-          is(type, TILE.HORSE)
-        ) {
-          equal(
-            model,
-            [[horse, 1]],
-            1,
-            `horseStart${x},${y}`
-          );
-        }
-
-        if (
-          is(type, TILE.UNICORN)
-        ) {
-          equal(
-            model,
-            [[unicorn, 1]],
-            1,
-            `unicornStart${x},${y}`
-          );
-        }
-
-        /*
-         * Only GRASS can become a wall.
-         */
-        if (
-          !is(type, TILE.GRASS)
-        ) {
-          equal(
-            model,
-            [[wall, 1]],
-            0,
-            `nonGrassWall${x},${y}`
-          );
-        }
-
-        const edge =
-          x === 0 ||
-          x === width - 1 ||
-          y === 0 ||
-          y === height - 1;
-
-        if (
-          isWater(type) ||
-          edge
-        ) {
-          equal(
-            model,
-            [[horse, 1]],
-            0,
-            `horseEdge${x},${y}`
-          );
-
-          equal(
-            model,
-            [[unicorn, 1]],
-            0,
-            `unicornEdge${x},${y}`
-          );
-        }
-      }
-    }
-
-    /*
-     * Wall budget.
-     */
-    addConstraint(
-      model,
-      sumVariables(allWalls),
+    const result = await clingo.run(
+      program,
       0,
-      puzzle.wallBudget,
-      "wallBudget"
+      ["--opt-mode=optN"],
+      answerSet => {
+        witnesses.push({
+          values: [...answerSet.Value],
+          costs: answerSet.Costs ? [...answerSet.Costs] : null,
+        });
+      }
     );
 
-    /*
-     * Static reachability.
-     */
-    const reachable =
-      calculateStaticReachability(
-        puzzle
-      );
+    if (result && result.Error) throw new Error(result.Error);
 
-    this.horseReachable =
-      reachable.horse;
-
-    this.unicornReachable =
-      reachable.unicorn;
-
-    for (
-      let x = 0;
-      x < width;
-      x++
-    ) {
-      for (
-        let y = 0;
-        y < height;
-        y++
-      ) {
-        if (
-          !this.horseReachable[x][y]
-        ) {
-          equal(
-            model,
-            [[this.horse[x][y], 1]],
-            0,
-            `horseStatic${x},${y}`
-          );
-        }
-
-        if (
-          !this.unicornReachable[x][y]
-        ) {
-          equal(
-            model,
-            [[this.unicorn[x][y], 1]],
-            0,
-            `unicornStatic${x},${y}`
-          );
-        }
-
-        if (
-          !this.horseReachable[x][y] &&
-          !this.unicornReachable[x][y]
-        ) {
-          equal(
-            model,
-            [[this.wall[x][y], 1]],
-            0,
-            `wallStatic${x},${y}`
-          );
-        }
-      }
+    if (result && result.Result === "UNSATISFIABLE") {
+      this.enumerated = true;
+      this.exhausted = true;
+      return;
     }
 
-    const maxFlow =
-      this.countReachable(
-        this.horseReachable
-      ) - 1;
+    const optimalCosts =
+      (result && result.Models && result.Models.Costs) ||
+      witnesses.reduce((best, witness) => {
+        if (!witness.costs) return best;
+        if (!best) return witness.costs;
+        return witness.costs[0] < best[0] ? witness.costs : best;
+      }, null);
 
-    const maxFlow2 =
-      this.countReachable(
-        this.unicornReachable
-      ) - 1;
+    const seenWalls = new Set();
 
-    this.initializeFlowBalances();
-
-    this.initializeFlowEdges(
-      maxFlow,
-      maxFlow2
-    );
-
-    this.finalizeFlowBalances();
-
-    this.buildObjective();
-  }
-
-  countReachable(grid) {
-    let count = 0;
-
-    for (
-      const column of grid
-    ) {
-      for (
-        const reachable of column
-      ) {
-        if (reachable) {
-          count++;
-        }
-      }
-    }
-
-    return count;
-  }
-
-  initializeFlowBalances() {
-    const {
-      puzzle,
-    } = this;
-
-    for (
-      let x = 0;
-      x < puzzle.width;
-      x++
-    ) {
-      for (
-        let y = 0;
-        y < puzzle.height;
-        y++
-      ) {
-        const type =
-          puzzle.tileType(x, y);
-
-        const horseTerms = [];
-        const unicornTerms = [];
-
-        if (
-          is(type, TILE.HORSE)
-        ) {
-          for (
-            let x2 = 0;
-            x2 < puzzle.width;
-            x2++
-          ) {
-            for (
-              let y2 = 0;
-              y2 < puzzle.height;
-              y2++
-            ) {
-              horseTerms.push([
-                this.horse[x2][y2],
-                1,
-              ]);
-            }
-          }
-        } else {
-          horseTerms.push([
-            this.horse[x][y],
-            -1,
-          ]);
-        }
-
-        if (
-          is(type, TILE.UNICORN)
-        ) {
-          for (
-            let x2 = 0;
-            x2 < puzzle.width;
-            x2++
-          ) {
-            for (
-              let y2 = 0;
-              y2 < puzzle.height;
-              y2++
-            ) {
-              unicornTerms.push([
-                this.unicorn[x2][y2],
-                1,
-              ]);
-            }
-          }
-        } else {
-          unicornTerms.push([
-            this.unicorn[x][y],
-            -1,
-          ]);
-        }
-
-        this.horseFlowBalance[x][y] =
-          horseTerms;
-
-        this.unicornFlowBalance[x][y] =
-          unicornTerms;
-      }
-    }
-  }
-
-  addFlowToBalance(
-    balance,
-    x,
-    y,
-    variable,
-    coefficient
-  ) {
-    balance[x][y].push([
-      variable,
-      coefficient,
-    ]);
-  }
-
-  initializeFlowEdges(
-    maxFlow,
-    maxFlow2
-  ) {
-    const {
-      puzzle,
-    } = this;
-
-    for (
-      let x = 0;
-      x < puzzle.width;
-      x++
-    ) {
-      for (
-        let y = 0;
-        y < puzzle.height;
-        y++
-      ) {
-        const type =
-          puzzle.tileType(x, y);
-
-        if (isWater(type)) {
-          continue;
-        }
-
-        const horseReachable =
-          this.horseReachable[x][y];
-
-        const unicornReachable =
-          this.unicornReachable[x][y];
-
-        if (
-          !horseReachable &&
-          !unicornReachable
-        ) {
-          continue;
-        }
-        
-        const neighbourHorse = [];
-        const neighbourUnicorn = [];
-
-        for (
-          const [dx, dy]
-          of DIRECTIONS
-        ) {
-          const nx = x + dx;
-          const ny = y + dy;
-
-          if (
-            nx < 0 ||
-            nx >= puzzle.width ||
-            ny < 0 ||
-            ny >= puzzle.height
-          ) {
-            continue;
-          }
-
-          if (
-            isWater(
-              puzzle.tileType(
-                nx,
-                ny
-              )
-            )
-          ) {
-            continue;
-          }
-
-          const ownWall =
-            this.wall[x][y];
-
-          const neighbourWall =
-            this.wall[nx][ny];
-
-          neighbourHorse.push(this.horse[nx][ny]);
-          neighbourUnicorn.push(this.unicorn[nx][ny]);
-
-          if (
-            horseReachable
-          ) {
-            this.addAnimalEdge(
-              x,
-              y,
-              nx,
-              ny,
-              ownWall,
-              neighbourWall,
-              this.horse,
-              this.horseFlowBalance,
-              maxFlow,
-              `flow${x},${y},${nx},${ny}`
-            );
-          }
-
-          if (
-            unicornReachable
-          ) {
-            this.addAnimalEdge(
-              x,
-              y,
-              nx,
-              ny,
-              ownWall,
-              neighbourWall,
-              this.unicorn,
-              this.unicornFlowBalance,
-              maxFlow2,
-              `flow2${x},${y},${nx},${ny}`
-            );
-          }
-        }
-
-        if (isPortal(type)) {
-          const match =
-            this.firstPortalMatch(
-              puzzle,
-              x,
-              y
-            );
-
-          if (match) {
-            const [nx, ny] =
-              match;
-
-            neighbourHorse.push(this.horse[nx][ny]);
-            neighbourUnicorn.push(this.unicorn[nx][ny]);
-
-            if (
-              horseReachable
-            ) {
-              this.addPortalEdge(
-                x,
-                y,
-                nx,
-                ny,
-                this.horse,
-                this.horseFlowBalance,
-                maxFlow,
-                `portalFlow${x},${y},${nx},${ny}`
-              );
-            }
-
-            if (
-              unicornReachable
-            ) {
-              this.addPortalEdge(
-                x,
-                y,
-                nx,
-                ny,
-                this.unicorn,
-                this.unicornFlowBalance,
-                maxFlow2,
-                `portalFlow2${x},${y},${nx},${ny}`
-              );
-            }
-          }
-        }
-        
-        if (is(type, TILE.GRASS)) {
-          addConstraint(
-            this.model,
-            [
-              [this.wall[x][y], 1],
-              ...neighbourHorse.map(variable => [variable, -1]),
-              ...neighbourUnicorn.map(variable => [variable, -1]),
-            ],
-            NEG_INF,
-            0,
-            `wallNeedsReachableNeighbour${x},${y}`
-          );
-        }
-      }
-    }
-  }
-
-  firstPortalMatch(
-    puzzle,
-    x,
-    y
-  ) {
-    for (
-      const [nx, ny]
-      of puzzle.matchingPortals(x, y)
-    ) {
+    for (const witness of witnesses) {
       if (
-        nx === x &&
-        ny === y
+        optimalCosts &&
+        witness.costs &&
+        !compareCosts(witness.costs, optimalCosts)
       ) {
         continue;
       }
 
-      return [nx, ny];
+      const wallCoordinates = parseAtomCoordinates(witness.values, "wall");
+      const wallKey = wallCoordinates
+        .map(([x, y]) => x + "," + y)
+        .sort()
+        .join(";");
+
+      if (seenWalls.has(wallKey)) continue;
+      seenWalls.add(wallKey);
+      this.solutions.push(this.makeSolution(witness.values));
     }
 
-    return null;
-  }
-
-  addAnimalEdge(
-    x,
-    y,
-    nx,
-    ny,
-    ownWall,
-    neighbourWall,
-    reachable,
-    balance,
-    maxFlow,
-    name
-  ) {
-    const source =
-      reachable[x][y];
-
-    const target =
-      reachable[nx][ny];
-
-    /*
-     * source - neighbourWall - target <= 0
-     */
-    addConstraint(
-      this.model,
-      [
-        [source, 1],
-        [neighbourWall, -1],
-        [target, -1],
-      ],
-      NEG_INF,
-      0,
-      `${name}_reachable`
+    this.solutions.sort((left, right) =>
+      left.wallKey.localeCompare(right.wallKey)
     );
 
-    const flow =
-      this.model.NumVar(
-        0,
-        maxFlow,
-        name
-      );
-
-    balance[x][y].push([
-      flow,
-      -1,
-    ]);
-
-    balance[nx][ny].push([
-      flow,
-      1,
-    ]);
-
-    /*
-     * flow + maxFlow * neighbourWall <= maxFlow
-     */
-    addConstraint(
-      this.model,
-      [
-        [flow, 1],
-        [neighbourWall, maxFlow],
-      ],
-      0,
-      maxFlow,
-      `${name}_target_wall`
-    );
-
-    /*
-     * flow + maxFlow * ownWall <= maxFlow
-     */
-    addConstraint(
-      this.model,
-      [
-        [flow, 1],
-        [ownWall, maxFlow],
-      ],
-      0,
-      maxFlow,
-      `${name}_source_wall`
-    );
+    this.enumerated = true;
+    this.exhausted = true;
   }
 
-  addPortalEdge(
-    x,
-    y,
-    nx,
-    ny,
-    reachable,
-    balance,
-    maxFlow,
-    name
-  ) {
-    const source =
-      reachable[x][y];
+  makeSolution(atoms) {
+    const { puzzle } = this;
+    const walls = parseAtomCoordinates(atoms, "wall");
+    const covered = parseAtomCoordinates(atoms, "covered");
+    const horseReach = parseAtomCoordinates(atoms, "reach\\(horse");
+    const unicornReach = parseAtomCoordinates(atoms, "reach\\(unicorn");
 
-    const target =
-      reachable[nx][ny];
-
-    /*
-     * source - target <= 0
-     */
-    addConstraint(
-      this.model,
-      [
-        [source, 1],
-        [target, -1],
-      ],
-      NEG_INF,
-      0,
-      `${name}_reachable`
+    const isWall = coordinatesToGrid(puzzle.width, puzzle.height, walls);
+    const reachable = [...horseReach, ...unicornReach];
+    const uniqueReachable = [
+      ...new Map(
+        reachable.map(([x, y]) => [x + "," + y, [x, y]])
+      ).values(),
+    ];
+    const isEnclosed = coordinatesToGrid(
+      puzzle.width,
+      puzzle.height,
+      uniqueReachable
     );
 
-    const flow =
-      this.model.NumVar(
-        0,
-        maxFlow,
-        name
-      );
+    const canReach = makeGrid(puzzle.width, puzzle.height, false);
 
-    balance[x][y].push([
-      flow,
-      -1,
-    ]);
+    for (const [x, y] of covered) {
+      canReach[x][y] = true;
 
-    balance[nx][ny].push([
-      flow,
-      1,
-    ]);
-  }
-
-  finalizeFlowBalances() {
-    const {
-      puzzle,
-      model,
-    } = this;
-
-    for (
-      let x = 0;
-      x < puzzle.width;
-      x++
-    ) {
-      for (
-        let y = 0;
-        y < puzzle.height;
-        y++
-      ) {
-        const type =
-          puzzle.tileType(x, y);
-
-        equal(
-          model,
-          this.horseFlowBalance[x][y],
-          is(type, TILE.HORSE)
-            ? 1
-            : 0,
-          `horseBalance${x},${y}`
-        );
-
-        equal(
-          model,
-          this.unicornFlowBalance[x][y],
-          is(type, TILE.UNICORN)
-            ? 1
-            : 0,
-          `unicornBalance${x},${y}`
-        );
-      }
-    }
-  }
-
-  buildObjective() {
-    const {
-      puzzle,
-      model,
-    } = this;
-
-    const objective =
-      model.Objective();
-
-    for (
-      let x = 0;
-      x < puzzle.width;
-      x++
-    ) {
-      for (
-        let y = 0;
-        y < puzzle.height;
-        y++
-      ) {
-        const score =
-          tileScore(
-            puzzle.tileType(x, y)
-          );
-
-        if (score !== 0) {
-          objective.SetCoefficient(
-            this.horse[x][y],
-            score
-          );
-
-          objective.SetCoefficient(
-            this.unicorn[x][y],
-            score
-          );
-        }
+      for (const [dx, dy] of DIRECTIONS) {
+        const nx = x + dx;
+        const ny = y + dy;
 
         if (
-          puzzle.type ===
-          "COSTLY_WALLS"
+          nx >= 0 &&
+          nx < puzzle.width &&
+          ny >= 0 &&
+          ny < puzzle.height &&
+          isWall[nx][ny]
         ) {
-          objective.SetCoefficient(
-            this.wall[x][y],
-            -6
-          );
+          canReach[nx][ny] = true;
         }
       }
     }
 
-    objective.SetMaximization();
-
-    this.optimalScoreExpression =
-      [];
-
-    for (
-      let x = 0;
-      x < puzzle.width;
-      x++
-    ) {
-      for (
-        let y = 0;
-        y < puzzle.height;
-        y++
-      ) {
-        const score =
-          tileScore(
-            puzzle.tileType(x, y)
-          );
-
-        if (score !== 0) {
-          this.optimalScoreExpression.push([
-            this.horse[x][y],
-            score,
-          ]);
-
-          this.optimalScoreExpression.push([
-            this.unicorn[x][y],
-            score,
-          ]);
-        }
-
-        if (
-          puzzle.type ===
-          "COSTLY_WALLS"
-        ) {
-          this.optimalScoreExpression.push([
-            this.wall[x][y],
-            -6,
-          ]);
-        }
-      }
-    }
-
-    /*
-     * Initially this constraint has no
-     * useful lower or upper bound.
-     */
-    this.optimalScoreConstraint =
-      addConstraint(
-        model,
-        this.optimalScoreExpression,
-        NEG_INF,
-        POS_INF,
-        "optimalScoreConstraint"
-      );
-  }
-
-  blacklistSolution(solution) {
-    const {
-      puzzle,
-      model,
-    } = this;
-
-    let wallsUsed = 0;
-    const terms = [];
-
-    for (
-      let x = 0;
-      x < puzzle.width;
-      x++
-    ) {
-      for (
-        let y = 0;
-        y < puzzle.height;
-      y++
-      ) {
-        if (
-          solution.isWall[x][y]
-        ) {
-          wallsUsed++;
-
-          terms.push([
-            this.wall[x][y],
-            -1,
-          ]);
-        } else {
-          terms.push([
-            this.wall[x][y],
-            1,
-          ]);
-        }
-      }
-    }
-
-    addConstraint(
-      model,
-      terms,
-      1 - wallsUsed,
-      POS_INF,
-      "blacklist"
-    );
-  }
-
-  addOptimalScore(optimalScore) {
-    if (
-      optimalScore === MIN_SCORE
-    ) {
-      return;
-    }
-
-    const trueOptimalScore =
-      this.puzzle.type ===
-      "LOVEBIRDS"
-        ? optimalScore * 2
-        : optimalScore;
-
-    this.optimalScoreConstraint.SetLb(trueOptimalScore);
-    this.optimalScoreConstraint.SetUb(trueOptimalScore);
-  }
-
-  async solve(
-    optimalScore = MIN_SCORE
-  ) {
-    this.addOptimalScore(
-      optimalScore
+    let score = covered.reduce(
+      (sum, [x, y]) => sum + tileScore(puzzle.tileType(x, y)),
+      0
     );
 
-    const solver =
-      this.model;
-
-    console.log("Starting SCIP solve...");
-    console.log(`  Variables:    ${solver.NumVariables()}`);
-    console.log(`  Constraints:  ${solver.NumConstraints()}`);
-
-    /*
-     * or-tools-wasm Solve() returns a Promise.
-     */
-    const status = await solver.Solve();
-
-    const statusName =
-      status === MPSolver.OPTIMAL
-        ? "OPTIMAL"
-        : status === MPSolver.FEASIBLE
-          ? "FEASIBLE"
-          : status === MPSolver.INFEASIBLE
-            ? "INFEASIBLE"
-            : status === MPSolver.UNBOUNDED
-              ? "UNBOUNDED"
-              : status === MPSolver.ABNORMAL
-                ? "ABNORMAL"
-                : status === MPSolver.MODEL_INVALID
-                  ? "MODEL_INVALID"
-                  : "NOT_SOLVED";
-
-    console.log(`  Status:       ${statusName}`);
-    console.log(`  Time:         ${(solver.wall_time() / 1000).toFixed(2)}s`);
-
-    if (
-      status !== MPSolver.OPTIMAL
-    ) {
-      return null;
-    }
-
-    const {
-      puzzle,
-    } = this;
-
-    const isWall =
-      makeGrid(
-        puzzle.width,
-        puzzle.height,
-        false
-      );
-
-    const isEnclosed =
-      makeGrid(
-        puzzle.width,
-        puzzle.height,
-        false
-      );
-    
-    const canReach =
-      makeGrid(
-        puzzle.width,
-        puzzle.height,
-        false
-      );
-
-    let wallCount = 0;
-    let score = 0;
-
-    for (
-      let x = 0;
-      x < puzzle.width;
-      x++
-    ) {
-      for (
-        let y = 0;
-        y < puzzle.height;
-        y++
-      ) {
-        isWall[x][y] =
-          valueOf(
-            this.wall[x][y]
-          );
-
-        isEnclosed[x][y] =
-          valueOf(
-            this.horse[x][y]
-          ) ||
-          valueOf(
-            this.unicorn[x][y]
-          );
-
-        if (
-          isWall[x][y]
-        ) {
-          wallCount++;
-        }
-
-        if (
-          isEnclosed[x][y]
-        ) {
-          score +=
-            tileScore(
-              puzzle.tileType(
-                x,
-                y
-              )
-            );
-        }
-      }
-    }
-    
-    for (
-      let x = 0;
-      x < puzzle.width;
-      x++
-    ) {
-      for (
-        let y = 0;
-        y < puzzle.height;
-        y++
-      ) {
-        if(isEnclosed[x][y]) {
-          canReach[x][y] = true;
-          
-          for (const [dx, dy] of DIRECTIONS) {
-            const x2 = x + dx;
-            const y2 = y + dy;
-            if(x2 < 0 || y2 < 0 || x2 >= puzzle.width || y2 >= puzzle.height) continue;
-            
-            if(isWall[x2][y2]) canReach[x2][y2] = true;
-          }
-        }
-      }
-    }
-
-    if (
-      puzzle.type ===
-      "COSTLY_WALLS"
-    ) {
-      score -=
-        6 * wallCount;
-    }
-
-    let objectiveValue =
-      solver
-        .Objective()
-        .Value();
-
-    if (
-      puzzle.type ===
-      "LOVEBIRDS"
-    ) {
-      objectiveValue *= 0.5;
-    }
-
-    if (
-      Math.abs(
-        score -
-        objectiveValue
-      ) >= 1e-4
-    ) {
-      console.warn(
-        `Computed score (${score}) differs from SCIP objective (${objectiveValue}).`
-      );
-    }
-
-    /*
-     * Match Java's post-solve tightening.
-     *
-     * For an optimal solution, the objective
-     * is fixed.
-     *
-     * For a merely feasible solution, it becomes
-     * a lower bound.
-     */
-    const roundedObjective =
-      Math.round(
-        solver
-          .Objective()
-          .Value()
-      );
-
-    this.optimalScoreConstraint.SetLb(roundedObjective);
-    this.optimalScoreConstraint.SetUb(roundedObjective);
+    if (puzzle.type === "COSTLY_WALLS") score -= 6 * walls.length;
 
     return {
       puzzle,
       score,
-      objectiveValue,
+      objectiveValue: score,
       isWall,
       isEnclosed,
       canReach,
-      wallsUsed: wallCount,
-      status: statusName,
+      wallsUsed: walls.length,
+      wallKey: walls
+        .map(([x, y]) => x + "," + y)
+        .sort()
+        .join(";"),
+      status: "OPTIMAL",
+      horseReach,
+      unicornReach,
     };
+  }
+
+  async solve() {
+    await this.enumerateOptimalSolutions();
+
+    if (this.solutionIndex >= this.solutions.length) return null;
+    return this.solutions[this.solutionIndex++];
+  }
+
+  blacklistSolution() {
+    // Compatibility no-op: Clingo already enumerated optimal models.
   }
 }
 
 function formatBoard(puzzle, solution) {
-  if(!solution) return puzzle.map;
-  
+  if (!solution) return puzzle.map;
+
   puzzle = solution.puzzle;
 
   return Array.from(
@@ -1646,45 +470,6 @@ function formatBoard(puzzle, solution) {
             : puzzle.tile(x, y).char
       ).join("")
   ).join("\n");
-}
-
-function logPuzzle(puzzle) {
-  const portals =
-    Object.fromEntries(
-      [
-        ...puzzle.portals.entries(),
-      ].map(
-        ([character, cells]) => [
-          character,
-          cells,
-        ]
-      )
-    );
-
-  console.log(
-    "Board:",
-    `${puzzle.width} × ${puzzle.height}`
-  );
-
-  console.log(
-    "Puzzle type:",
-    puzzle.type
-  );
-
-  console.log(
-    "Wall budget:",
-    puzzle.wallBudget
-  );
-
-  console.log(
-    "Optimal score:",
-    puzzle.optimalScore
-  );
-
-  console.log(
-    "Portals:",
-    portals
-  );
 }
 
 // RENDERING
@@ -1983,65 +768,54 @@ function showPuzzle(puzzle) {
   return view;
 }
 
-async function initiallySolvePuzzle(puzzle, view) {
+async function initiallySolvePuzzle(puzzle, view, staticModel) {
   let solutions = [];
   let solutionIndex = 0;
   let exhausted = false;
 
-  const puzzleSolver =
-    new PuzzleSolver(
-      puzzle
-    );
+  const puzzleSolver = new PuzzleSolver(puzzle, staticModel);
 
-  setWorking(
-    view.status,
-    "finding optimal solution…"
-  );
-  
-  let optimalScore = puzzle.optimalScore ? puzzle.optimalScore : MIN_SCORE;
-  let solution = await puzzleSolver.solve(optimalScore);
+  setWorking(view.status, "finding optimal solution…");
+
+  let solution = await puzzleSolver.solve();
 
   if (!solution) {
     view.status.querySelector("small").textContent =
       "No legal solution found";
     return;
   }
-  
-  optimalScore = solution.score;
-  
-  puzzleSolver.blacklistSolution(solution);
+
   solutions.push(solution);
   renderSolution(view, solution);
-  
-  setWorking(
-    view.status,
-    "finding next optimal solutions…"
-  );
-  
-  for(let i = 0; i < 9; i++) {
-    
-    solution = await puzzleSolver.solve(optimalScore);
-    if(!solution) {
-      
+
+  setWorking(view.status, "finding next optimal solutions…");
+
+  for (let i = 0; i < 9; i++) {
+    solution = await puzzleSolver.solve();
+
+    if (!solution) {
       exhausted = true;
       break;
     }
-    
-    puzzleSolver.blacklistSolution(solution);
+
     solutions.push(solution);
   }
 
   function update() {
     renderSolution(view, solutions[solutionIndex]);
-    
+
     view.status.querySelector("small").textContent =
-      `solution ${solutionIndex + 1}/${solutions.length}${exhausted ? "" : "+"} · ${solutions[solutionIndex].wallsUsed}/${solutions[solutionIndex].puzzle.wallBudget} walls used`;
+      "solution " + (solutionIndex + 1) + "/" + solutions.length +
+      (exhausted ? "" : "+") + " · " +
+      solutions[solutionIndex].wallsUsed + "/" +
+      solutions[solutionIndex].puzzle.wallBudget + " walls used";
 
     const [previous, next] =
       view.status.querySelectorAll("button");
 
     previous.disabled = solutionIndex === 0;
-    next.disabled = solutionIndex + 1 >= solutions.length ? exhausted : false;
+    next.disabled =
+      solutionIndex + 1 >= solutions.length ? exhausted : false;
   }
 
   const [previous, next] =
@@ -2050,64 +824,35 @@ async function initiallySolvePuzzle(puzzle, view) {
   previous.onclick = () => {
     if (solutionIndex > 0) {
       solutionIndex--;
-      // Display stored solution...
       update();
     }
   };
 
   next.onclick = async () => {
     solutionIndex++;
-    
-    if(solutionIndex >= solutions.length) {
-    
-      if(exhausted) {
-      
+
+    if (solutionIndex >= solutions.length) {
+      if (exhausted) {
         solutionIndex--;
         return;
       }
-      
-      setWorking(
-        view.status,
-        "finding next optimal solutions…"
-      );
-      
-      let solution = await puzzleSolver.solve(optimalScore);
-      if(solution) {
-        
-        puzzleSolver.blacklistSolution(solution);
-        solutions.push(solution);
-        
-        renderSolution(view, solution);
-        
-        setWorking(
-          view.status,
-          "finding next optimal solutions…"
-        );
-        
-        for(let i = 0; i < 9; i++) {
-          
-          solution = await puzzleSolver.solve(optimalScore);
-          if(!solution) {
-            
-            exhausted = true;
-            break;
-          }
-          
-          puzzleSolver.blacklistSolution(solution);
-          solutions.push(solution);
+
+      setWorking(view.status, "finding next optimal solutions…");
+
+      for (let i = 0; i < 10; i++) {
+        const nextSolution = await puzzleSolver.solve();
+
+        if (!nextSolution) {
+          exhausted = true;
+          break;
         }
-        
-        update();
-        
-      } else {
-        
-        solutionIndex--;
-        exhausted = true;
-        update();
+
+        solutions.push(nextSolution);
       }
-      
+
+      if (solutionIndex >= solutions.length) solutionIndex--;
+      update();
     } else {
-    
       update();
     }
   };
@@ -2116,13 +861,8 @@ async function initiallySolvePuzzle(puzzle, view) {
 }
 
 async function main() {
-  const params =
-    new URLSearchParams(
-      window.location.search
-    );
-
-  const levelEncoded =
-    params.get("level");
+  const params = new URLSearchParams(window.location.search);
+  const levelEncoded = params.get("level");
 
   if (!levelEncoded) {
     console.log(
@@ -2130,112 +870,62 @@ async function main() {
     );
     return;
   }
-  
-  /*
-   * The current or-tools-wasm MPSolver API requires
-   * initialization before creating the solver.
-   */
-  await initMPSolver();
 
   let level;
   let bonus = null;
 
   try {
-    level =
-      decodeBase64Json(
-        levelEncoded
-      );
+    level = decodeBase64Json(levelEncoded);
 
-    const bonusEncoded =
-      params.get("bonus");
-
-    if (bonusEncoded) {
-      bonus =
-        decodeBase64Json(
-          bonusEncoded
-        );
-    }
+    const bonusEncoded = params.get("bonus");
+    if (bonusEncoded) bonus = decodeBase64Json(bonusEncoded);
   } catch (error) {
-    console.error(
-      "Failed to decode puzzle data:",
-      error
-    );
+    console.error("Failed to decode puzzle data:", error);
+    throw new Error("Could not decode puzzle data.", { cause: error });
+  }
 
+  const puzzle = parsePuzzle(level, false);
+  const bonusPuzzle = bonus === null ? null : parsePuzzle(bonus, true);
+
+  const modelResponse =
+    await fetch(import.meta.env.BASE_URL + "enclose_horse.lp");
+
+  if (!modelResponse.ok) {
     throw new Error(
-      "Could not decode puzzle data.",
-      {
-        cause: error,
-      }
+      "Could not load static Clingo model (" +
+      modelResponse.status +
+      ")."
     );
   }
 
-  // console.log("Level:", level);
-  // console.log("Bonus:", bonus);
+  const staticModel = await modelResponse.text();
 
-  const puzzle =
-    parsePuzzle(
-      level,
-      false
-    );
-  
-  const bonusPuzzle =
-    bonus === null ? null : parsePuzzle(
-      bonus,
-      true
-    );
-
-  // logPuzzle(puzzle)
-  // logPuzzle(bonusPuzzle);
-
-  /*
-   * Verify SCIP is actually linked into the WASM build.
-   */
-  const probe =
-    MPSolver.CreateSolver(
-      "SCIP"
-    );
-
-  if (!probe) {
-    throw new Error(
-      "This or-tools-wasm build does not expose the SCIP MPSolver backend."
-    );
-  }
-
-  /*
-   * We only need the probe to test backend
-   * availability. Release it immediately.
-   */
-  probe.delete();
-  
-  // RENDERING:
-  
   if (install) install.hidden = true;
-  
+
   if (!results) {
     console.error("Missing #results element");
     return;
   }
-  
+
   results.hidden = false;
-  
+
   const view1 = showPuzzle(puzzle);
   const view2 = bonusPuzzle === null ? null : showPuzzle(bonusPuzzle);
-  
+
   try {
-    await initiallySolvePuzzle(puzzle, view1);
-    if(bonusPuzzle !== null) await initiallySolvePuzzle(bonusPuzzle, view2);
+    await initiallySolvePuzzle(puzzle, view1, staticModel);
+
+    if (bonusPuzzle !== null) {
+      await initiallySolvePuzzle(bonusPuzzle, view2, staticModel);
+    }
   } catch (error) {
     results.hidden = false;
     results.innerHTML =
-      `<div class="error">${error.message}</div>`;
+      '<div class="error">' + error.message + "</div>";
   }
 }
 
-main().catch(
-  error => {
-    console.error(
-      "Solver failed:",
-      error
-    );
-  }
-);
+main().catch(error => {
+  console.error("Solver failed:", error);
+});
+
