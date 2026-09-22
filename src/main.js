@@ -221,6 +221,7 @@ function generateFacts(puzzle) {
   ];
 
   if (puzzle.optimalScore != null) {
+    console.log(puzzle.optimalScore)
     facts.push(fact("optimal_score", puzzle.optimalScore));
   }
 
