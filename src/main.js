@@ -463,10 +463,6 @@ class PuzzleSolver {
     if (this.solutionIndex >= this.solutions.length) return null;
     return this.solutions[this.solutionIndex++];
   }
-
-  blacklistSolution() {
-    // Compatibility no-op: Clingo already enumerated optimal models.
-  }
 }
 
 function formatBoard(puzzle, solution) {
