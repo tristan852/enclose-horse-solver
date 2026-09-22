@@ -321,6 +321,14 @@ function compareCosts(left, right) {
   return left.every((value, index) => value === right[index]);
 }
 
+function canonicalWallKey(coordinates) {
+  return coordinates
+    .slice()
+    .sort(([x1, y1], [x2, y2]) => y1 - y2 || x1 - x2)
+    .map(([x, y]) => x + "," + y)
+    .join(";");
+}
+
 class PuzzleSolver {
   constructor(puzzle, staticModel) {
     this.puzzle = puzzle;
@@ -375,10 +383,7 @@ class PuzzleSolver {
       }
 
       const wallCoordinates = parseAtomCoordinates(witness.values, "wall");
-      const wallKey = wallCoordinates
-        .map(([x, y]) => x + "," + y)
-        .sort()
-        .join(";");
+      const wallKey = canonicalWallKey(wallCoordinates);
 
       if (seenWalls.has(wallKey)) continue;
       seenWalls.add(wallKey);
@@ -446,10 +451,7 @@ class PuzzleSolver {
       isEnclosed,
       canReach,
       wallsUsed: walls.length,
-      wallKey: walls
-        .map(([x, y]) => x + "," + y)
-        .sort()
-        .join(";"),
+      wallKey: canonicalWallKey(walls),
       status: "OPTIMAL",
       horseReach,
       unicornReach,
