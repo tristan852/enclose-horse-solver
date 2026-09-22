@@ -328,6 +328,7 @@ class PuzzleSolver {
 
   async enumerateOptimalSolutions() {
     if (this.enumerated) return;
+    this.enumerated = true;
 
     const program = this.staticModel + "\n" + generateFacts(this.puzzle);
     const witnesses = [];
@@ -347,7 +348,6 @@ class PuzzleSolver {
     if (result && result.Error) throw new Error(result.Error);
 
     if (result && result.Result === "UNSATISFIABLE") {
-      this.enumerated = true;
       return;
     }
 
@@ -384,8 +384,6 @@ class PuzzleSolver {
     this.solutions.sort((left, right) =>
       left.wallKey.localeCompare(right.wallKey)
     );
-
-    this.enumerated = true;
   }
 
   makeSolution(atoms) {
