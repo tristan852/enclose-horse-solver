@@ -220,6 +220,10 @@ function generateFacts(puzzle) {
     fact("budget", puzzle.wallBudget),
   ];
 
+  if (puzzle.optimalScore != null) {
+    facts.push(fact("optimal_score", puzzle.optimalScore));
+  }
+
   for (let x = 0; x < puzzle.width; x++) {
     for (let y = 0; y < puzzle.height; y++) {
       const type = puzzle.tileType(x, y);
