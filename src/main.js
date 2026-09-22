@@ -285,6 +285,21 @@ function parseAtomCoordinates(atoms, predicate) {
   return coordinates;
 }
 
+function parseReachCoordinates(atoms, animal) {
+  const coordinates = [];
+  const pattern = new RegExp(
+    "^reach\\(" + animal + ",(-?\\d+),(-?\\d+)\\)$"
+  );
+
+  for (const atom of atoms) {
+    const match = pattern.exec(atom);
+    if (!match) continue;
+    coordinates.push([Number(match[1]), Number(match[2])]);
+  }
+
+  return coordinates;
+}
+
 function coordinatesToGrid(width, height, coordinates) {
   const grid = makeGrid(width, height, false);
 
@@ -380,8 +395,8 @@ class PuzzleSolver {
     const { puzzle } = this;
     const walls = parseAtomCoordinates(atoms, "wall");
     const covered = parseAtomCoordinates(atoms, "covered");
-    const horseReach = parseAtomCoordinates(atoms, "reach\\(horse");
-    const unicornReach = parseAtomCoordinates(atoms, "reach\\(unicorn");
+    const horseReach = parseReachCoordinates(atoms, "horse");
+    const unicornReach = parseReachCoordinates(atoms, "unicorn");
 
     const isWall = coordinatesToGrid(puzzle.width, puzzle.height, walls);
     const reachable = [...horseReach, ...unicornReach];
@@ -928,4 +943,3 @@ async function main() {
 main().catch(error => {
   console.error("Solver failed:", error);
 });
-
