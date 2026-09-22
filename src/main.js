@@ -778,6 +778,7 @@ async function initiallySolvePuzzle(puzzle, view, staticModel) {
   let solutions = [];
   let solutionIndex = 0;
   let exhausted = false;
+  const solutionsPerBatch = 100;
   
   const puzzleSolver = new PuzzleSolver(puzzle, staticModel);
 
@@ -809,7 +810,7 @@ async function initiallySolvePuzzle(puzzle, view, staticModel) {
 
   setWorking(view.status, "finding next optimal solutions…");
 
-  for (let i = 0; i < 9; i++) {
+  for (let i = 0; i < solutionsPerBatch - 1; i++) {
     solution = await requestSolution("another optimal solution");
 
     if (!solution) {
@@ -858,7 +859,7 @@ async function initiallySolvePuzzle(puzzle, view, staticModel) {
 
       setWorking(view.status, "finding next optimal solutions…");
 
-      for (let i = 0; i < 10; i++) {
+      for (let i = 0; i < solutionsPerBatch; i++) {
         const nextSolution = await requestSolution(
           "another optimal solution"
         );
