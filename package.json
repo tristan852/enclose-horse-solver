@@ -21,8 +21,7 @@
   },
   "homepage": "https://github.com/tristan852/enclose-horse-solver#readme",
   "dependencies": {
-    "coi-serviceworker": "^0.1.7",
-    "or-tools-wasm": "^0.9.1"
+    "clingo-wasm": "^0.6.0"
   },
   "devDependencies": {
     "vite": "^8.3.0"
