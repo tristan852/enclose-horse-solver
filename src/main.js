@@ -324,7 +324,6 @@ class PuzzleSolver {
     this.solutions = [];
     this.solutionIndex = 0;
     this.enumerated = false;
-    this.exhausted = false;
   }
 
   async enumerateOptimalSolutions() {
@@ -349,7 +348,6 @@ class PuzzleSolver {
 
     if (result && result.Result === "UNSATISFIABLE") {
       this.enumerated = true;
-      this.exhausted = true;
       return;
     }
 
@@ -388,7 +386,6 @@ class PuzzleSolver {
     );
 
     this.enumerated = true;
-    this.exhausted = true;
   }
 
   makeSolution(atoms) {
