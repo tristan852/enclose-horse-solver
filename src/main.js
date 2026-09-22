@@ -787,12 +787,32 @@ async function initiallySolvePuzzle(puzzle, view, staticModel) {
   let solutions = [];
   let solutionIndex = 0;
   let exhausted = false;
+  let lastSolveStatus = "waiting for solver";
 
   const puzzleSolver = new PuzzleSolver(puzzle, staticModel);
 
+  async function requestSolution(kind) {
+    const startedAt = performance.now();
+    const candidate = await puzzleSolver.solve();
+    const elapsedMs = performance.now() - startedAt;
+    const elapsed = `${elapsedMs.toFixed(1)} ms`;
+
+    lastSolveStatus = candidate
+      ? `${kind} found · ${elapsed}`
+      : `${kind} not found · ${elapsed}`;
+
+    console.info("Clingo solution request:", {
+      status: candidate ? "found" : "not found",
+      kind,
+      elapsedMs,
+    });
+
+    return candidate;
+  }
+
   setWorking(view.status, "finding optimal solution…");
 
-  let solution = await puzzleSolver.solve();
+  let solution = await requestSolution("initial optimal solution");
 
   if (!solution) {
     view.status.querySelector("small").textContent =
@@ -806,7 +826,7 @@ async function initiallySolvePuzzle(puzzle, view, staticModel) {
   setWorking(view.status, "finding next optimal solutions…");
 
   for (let i = 0; i < 9; i++) {
-    solution = await puzzleSolver.solve();
+    solution = await requestSolution("another optimal solution");
 
     if (!solution) {
       exhausted = true;
@@ -855,7 +875,9 @@ async function initiallySolvePuzzle(puzzle, view, staticModel) {
       setWorking(view.status, "finding next optimal solutions…");
 
       for (let i = 0; i < 10; i++) {
-        const nextSolution = await puzzleSolver.solve();
+        const nextSolution = await requestSolution(
+          "another optimal solution"
+        );
 
         if (!nextSolution) {
           exhausted = true;
