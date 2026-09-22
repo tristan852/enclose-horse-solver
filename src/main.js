@@ -393,6 +393,8 @@ class PuzzleSolver {
     this.solutions.sort((left, right) =>
       left.wallKey.localeCompare(right.wallKey)
     );
+    
+    console.log(solutions);
   }
 
   makeSolution(atoms) {
