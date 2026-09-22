@@ -324,9 +324,33 @@ function compareCosts(left, right) {
 function canonicalWallKey(coordinates) {
   return coordinates
     .slice()
-    .sort(([x1, y1], [x2, y2]) => y1 - y2 || x1 - x2)
+    .sort(compareWallCoordinates)
     .map(([x, y]) => x + "," + y)
     .join(";");
+}
+
+function compareWallCoordinates([x1, y1], [x2, y2]) {
+  return y1 - y2 || x1 - x2;
+}
+
+function compareWallSets(left, right) {
+  const leftWalls = left.wallCoordinates;
+  const rightWalls = right.wallCoordinates;
+
+  if (leftWalls.length !== rightWalls.length) {
+    return leftWalls.length - rightWalls.length;
+  }
+
+  for (let index = 0; index < leftWalls.length; index++) {
+    const comparison = compareWallCoordinates(
+      leftWalls[index],
+      rightWalls[index]
+    );
+
+    if (comparison !== 0) return comparison;
+  }
+
+  return 0;
 }
 
 class PuzzleSolver {
@@ -390,16 +414,13 @@ class PuzzleSolver {
       this.solutions.push(this.makeSolution(witness.values));
     }
 
-    this.solutions.sort((left, right) =>
-      left.wallKey.localeCompare(right.wallKey)
-    );
-    
-    console.log(this.solutions);
+    this.solutions.sort(compareWallSets);
   }
 
   makeSolution(atoms) {
     const { puzzle } = this;
     const walls = parseAtomCoordinates(atoms, "wall");
+    const canonicalWalls = walls.slice().sort(compareWallCoordinates);
     const covered = parseAtomCoordinates(atoms, "covered");
     const horseReach = parseReachCoordinates(atoms, "horse");
     const unicornReach = parseReachCoordinates(atoms, "unicorn");
@@ -453,7 +474,8 @@ class PuzzleSolver {
       isEnclosed,
       canReach,
       wallsUsed: walls.length,
-      wallKey: canonicalWallKey(walls),
+      wallCoordinates: canonicalWalls,
+      wallKey: canonicalWallKey(canonicalWalls),
       status: "OPTIMAL",
       horseReach,
       unicornReach,
