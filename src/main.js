@@ -394,7 +394,7 @@ class PuzzleSolver {
       left.wallKey.localeCompare(right.wallKey)
     );
     
-    console.log(solutions);
+    console.log(this.solutions);
   }
 
   makeSolution(atoms) {
