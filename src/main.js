@@ -783,8 +783,7 @@ async function initiallySolvePuzzle(puzzle, view, staticModel) {
   let solutions = [];
   let solutionIndex = 0;
   let exhausted = false;
-  let lastSolveStatus = "waiting for solver";
-
+  
   const puzzleSolver = new PuzzleSolver(puzzle, staticModel);
 
   async function requestSolution(kind) {
@@ -792,17 +791,11 @@ async function initiallySolvePuzzle(puzzle, view, staticModel) {
     const candidate = await puzzleSolver.solve();
     const elapsedMs = performance.now() - startedAt;
     const elapsed = `${elapsedMs.toFixed(1)} ms`;
-
-    lastSolveStatus = candidate
-      ? `${kind} found · ${elapsed}`
-      : `${kind} not found · ${elapsed}`;
-
-    console.info("Clingo solution request:", {
-      status: candidate ? "found" : "not found",
-      kind,
-      elapsedMs,
-    });
-
+  
+    console.info(
+      `Clingo solution request: status=${candidate ? "found" : "not found"}, kind=${kind}, elapsed=${elapsed}`
+    );
+  
     return candidate;
   }
 
