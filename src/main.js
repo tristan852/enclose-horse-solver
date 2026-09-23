@@ -350,21 +350,19 @@ class PuzzleSolver {
     this.puzzle = puzzle;
     this.staticModel = staticModel;
     this.solutions = [];
-    this.solutionIndex = 0;
-    this.enumerated = false;
+    this.hasMore = false;
   }
 
-  async enumerateOptimalSolutions() {
-    if (this.enumerated) return;
-    this.enumerated = true;
-
+  async solve() {
     const program = this.staticModel + "\n" + generateFacts(this.puzzle);
     const foundSolutions = [];
+    
+    const N = 100;
 
     const result = await clingo.run(
       program,
       0,
-      ["--opt-mode=optN", "--models=100", "--project"],
+      ["--opt-mode=optN", `--models=${N + 1}`, "--project"],
       answerSet => {
         foundSolutions.push({
           values: [...answerSet.Value],
@@ -372,6 +370,8 @@ class PuzzleSolver {
         });
       }
     );
+    
+    this.hasMore = witnesses.length > N;
 
     if (result && result.Error) throw new Error(result.Error);
 
@@ -379,12 +379,16 @@ class PuzzleSolver {
       return;
     }
 
-    for (const foundSolution of foundSolutions) {
+    for (const foundSolution of foundSolutions.slice(0, N)) {
 
       this.solutions.push(this.makeSolution(foundSolution.values));
     }
 
     this.solutions.sort(compareWallSets);
+    return {
+      solutions: this.solutions,
+      hasMore: this.hasMore,
+    };
   }
 
   makeSolution(atoms) {
@@ -449,13 +453,6 @@ class PuzzleSolver {
       horseReach,
       unicornReach,
     };
-  }
-
-  async solve() {
-    await this.enumerateOptimalSolutions();
-
-    if (this.solutionIndex >= this.solutions.length) return null;
-    return this.solutions[this.solutionIndex++];
   }
 }
 
@@ -774,50 +771,30 @@ function showPuzzle(puzzle) {
 }
 
 async function initiallySolvePuzzle(puzzle, view, staticModel) {
-  let solutions = [];
   let solutionIndex = 0;
-  let exhausted = false;
-  const solutionsPerBatch = 100;
-  
   const puzzleSolver = new PuzzleSolver(puzzle, staticModel);
 
-  async function requestSolution(kind) {
+  async function requestSolutions() {
     const startedAt = performance.now();
-    const candidate = await puzzleSolver.solve();
+    const result = await puzzleSolver.solve();
     const elapsedMs = performance.now() - startedAt;
     const elapsed = `${elapsedMs.toFixed(1)} ms`;
   
     console.info(
-      `Clingo solution request: status=${candidate ? "found" : "not found"}, kind=${kind}, elapsed=${elapsed}`
+      `Clingo: elapsed=${elapsed}, solution_count=${result.solutions.length}, has_more=${result.hasMore}`
     );
   
-    return candidate;
+    return result;
   }
 
-  setWorking(view.status, "finding optimal solution…");
+  setWorking(view.status, "finding optimal solutions…");
 
-  let solution = await requestSolution("initial optimal solution");
+  const {solutions, hasMore} = await requestSolutions();
 
-  if (!solution) {
+  if (!solutions || solutions.length == 0) {
     view.status.querySelector("small").textContent =
       "No legal solution found";
     return;
-  }
-
-  solutions.push(solution);
-  renderSolution(view, solution);
-
-  setWorking(view.status, "finding next optimal solutions…");
-
-  for (let i = 0; i < solutionsPerBatch - 1; i++) {
-    solution = await requestSolution("another optimal solution");
-
-    if (!solution) {
-      exhausted = true;
-      break;
-    }
-
-    solutions.push(solution);
   }
 
   function update() {
@@ -825,7 +802,7 @@ async function initiallySolvePuzzle(puzzle, view, staticModel) {
 
     view.status.querySelector("small").textContent =
       "solution " + (solutionIndex + 1) + "/" + solutions.length +
-      (exhausted ? "" : "+") + " · " +
+      (hasMore ? "+" : "") + " · " +
       solutions[solutionIndex].wallsUsed + "/" +
       solutions[solutionIndex].puzzle.wallBudget + " walls used";
 
@@ -833,12 +810,10 @@ async function initiallySolvePuzzle(puzzle, view, staticModel) {
       view.status.querySelectorAll("button");
 
     previous.disabled = solutionIndex === 0;
-    next.disabled =
-      solutionIndex + 1 >= solutions.length ? exhausted : false;
+    next.disabled = solutionIndex + 1 >= solutions.length;
   }
 
-  const [previous, next] =
-    view.status.querySelectorAll("button");
+  const [previous, next] = view.status.querySelectorAll("button");
 
   previous.onclick = () => {
     if (solutionIndex > 0) {
@@ -848,32 +823,8 @@ async function initiallySolvePuzzle(puzzle, view, staticModel) {
   };
 
   next.onclick = async () => {
-    solutionIndex++;
-
-    if (solutionIndex >= solutions.length) {
-      if (exhausted) {
-        solutionIndex--;
-        return;
-      }
-
-      setWorking(view.status, "finding next optimal solutions…");
-
-      for (let i = 0; i < solutionsPerBatch; i++) {
-        const nextSolution = await requestSolution(
-          "another optimal solution"
-        );
-
-        if (!nextSolution) {
-          exhausted = true;
-          break;
-        }
-
-        solutions.push(nextSolution);
-      }
-
-      if (solutionIndex >= solutions.length) solutionIndex--;
-      update();
-    } else {
+    if (solutionIndex + 1 < solutions.length) {
+      solutionIndex++;
       update();
     }
   };
