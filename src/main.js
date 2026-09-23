@@ -471,7 +471,7 @@ class PuzzleSolver {
     );
     
     if (result && result.Error) throw new Error(result.Error);
-    if (!result || result.Result === "UNSATISFIABLE") return;
+    if (!result || result.Result !== "OPTIMUM FOUND") return;
     
     const optimalCosts = foundSolutions
       .map(s => s.costs)
