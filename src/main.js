@@ -366,7 +366,7 @@ class PuzzleSolver {
     const foundSolutions = [];
     const seenWallKeys = new Set();
     
-    const N = 80;
+    const N = 83;
 
     const result = await clingo.run(
       program,
