@@ -371,7 +371,7 @@ class PuzzleSolver {
       }
     );
     
-    this.hasMore = witnesses.length > N;
+    this.hasMore = foundSolutions.length > N;
 
     if (result && result.Error) throw new Error(result.Error);
 
