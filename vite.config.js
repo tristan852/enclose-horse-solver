@@ -28,6 +28,10 @@ function bookmarkletPlugin() {
 export default defineConfig({
   base: "/enclose-horse-solver/",
 
+  build: {
+    minify: true,
+  },
+
   plugins: [bookmarkletPlugin()],
 
   worker: {
