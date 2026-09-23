@@ -213,6 +213,60 @@ function fact(name, ...args) {
   return name + "(" + args.join(",") + ").";
 }
 
+function calculateStaticReachability(puzzle, animalType) {
+  const reachable = makeGrid(
+    puzzle.width,
+    puzzle.height,
+    false
+  );
+  const pending = [];
+  let foundAnimal = false;
+
+  for (let x = 0; x < puzzle.width; x++) {
+    for (let y = 0; y < puzzle.height; y++) {
+      if (puzzle.tileType(x, y) === animalType) {
+        pending.push([x, y]);
+        foundAnimal = true;
+        break;
+      }
+    }
+    
+    if(foundAnimal) break;
+  }
+
+  while (pending.length > 0) {
+    const [x, y] = pending.pop();
+
+    if (
+      x < 0 ||
+      x >= puzzle.width ||
+      y < 0 ||
+      y >= puzzle.height ||
+      reachable[x][y] ||
+      isWater(puzzle.tileType(x, y))
+    ) {
+      continue;
+    }
+
+    reachable[x][y] = true;
+
+    for (const [dx, dy] of DIRECTIONS) {
+      pending.push([x + dx, y + dy]);
+    }
+
+    if (isPortal(puzzle.tileType(x, y))) {
+      const matching = puzzle.matchingPortals(x, y);
+      const target = matching.find(
+        ([nx, ny]) => nx !== x || ny !== y
+      );
+
+      if (target) pending.push(target);
+    }
+  }
+
+  return reachable;
+}
+
 function generateFacts(puzzle) {
   const facts = [
     "% Generated instance facts for " + puzzle.width + "x" + puzzle.height + ".",
@@ -223,6 +277,11 @@ function generateFacts(puzzle) {
   if (puzzle.optimalScore != null) {
     facts.push(fact("optimal_score", puzzle.optimalScore));
   }
+
+  const horseStaticReachability =
+    calculateStaticReachability(puzzle, TILE.HORSE);
+  const unicornStaticReachability =
+    calculateStaticReachability(puzzle, TILE.UNICORN);
 
   for (let x = 0; x < puzzle.width; x++) {
     for (let y = 0; y < puzzle.height; y++) {
@@ -240,6 +299,22 @@ function generateFacts(puzzle) {
 
       if (boundary) facts.push(fact("boundary", x, y));
       facts.push(fact("tile_score", x, y, tileScore(type)));
+
+      if (!horseStaticReachability[x][y]) {
+        facts.push(`:- reach(horse,${x},${y}).`);
+      }
+
+      if (!unicornStaticReachability[x][y]) {
+        facts.push(`:- reach(unicorn,${x},${y}).`);
+      }
+
+      if (
+        is(type, TILE.GRASS) &&
+        !horseStaticReachability[x][y] &&
+        !unicornStaticReachability[x][y]
+      ) {
+        facts.push(`:- wall(${x},${y}).`);
+      }
     }
   }
 
