@@ -397,7 +397,6 @@ class PuzzleSolver {
       return;
     }
 
-    console.log(optimalSolutions.length);
     this.hasMore = optimalSolutions.length > N;
 
     for (const foundSolution of optimalSolutions.slice(0, N)) {
