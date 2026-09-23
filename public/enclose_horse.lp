@@ -126,3 +126,5 @@ covered(X,Y) :- mode(lovers_quarrel), reach(unicorn,X,Y).
 #show covered/2.
 #show reach/3.
 #show wall_needs_reachable_neighbour/2.
+
+#project wall/2.

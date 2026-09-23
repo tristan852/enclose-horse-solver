@@ -367,14 +367,14 @@ class PuzzleSolver {
     this.enumerated = true;
 
     const program = this.staticModel + "\n" + generateFacts(this.puzzle);
-    const witnesses = [];
+    const foundSolutions = [];
 
     const result = await clingo.run(
       program,
       0,
-      ["--opt-mode=optN"],
+      ["--opt-mode=optN", "--models=100", "--project"],
       answerSet => {
-        witnesses.push({
+        foundSolutions.push({
           values: [...answerSet.Value],
           costs: answerSet.Costs ? [...answerSet.Costs] : null,
         });
@@ -387,31 +387,12 @@ class PuzzleSolver {
       return;
     }
 
-    const optimalCosts =
-      (result && result.Models && result.Models.Costs) ||
-      witnesses.reduce((best, witness) => {
-        if (!witness.costs) return best;
-        if (!best) return witness.costs;
-        return witness.costs[0] < best[0] ? witness.costs : best;
-      }, null);
+    for (const foundSolution of foundSolutions) {
 
-    const seenWalls = new Set();
-
-    for (const witness of witnesses) {
-      if (
-        optimalCosts &&
-        witness.costs &&
-        !compareCosts(witness.costs, optimalCosts)
-      ) {
-        continue;
-      }
-
-      const wallCoordinates = parseAtomCoordinates(witness.values, "wall");
+      const wallCoordinates = parseAtomCoordinates(foundSolution.values, "wall");
       const wallKey = canonicalWallKey(wallCoordinates);
 
-      if (seenWalls.has(wallKey)) continue;
-      seenWalls.add(wallKey);
-      this.solutions.push(this.makeSolution(witness.values));
+      this.solutions.push(this.makeSolution(foundSolution.values));
     }
 
     this.solutions.sort(compareWallSets);
