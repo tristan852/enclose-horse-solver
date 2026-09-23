@@ -321,14 +321,6 @@ function compareCosts(left, right) {
   return left.every((value, index) => value === right[index]);
 }
 
-function canonicalWallKey(coordinates) {
-  return coordinates
-    .slice()
-    .sort(compareWallCoordinates)
-    .map(([x, y]) => x + "," + y)
-    .join(";");
-}
-
 function compareWallCoordinates([x1, y1], [x2, y2]) {
   return y1 - y2 || x1 - x2;
 }
@@ -388,9 +380,6 @@ class PuzzleSolver {
     }
 
     for (const foundSolution of foundSolutions) {
-
-      const wallCoordinates = parseAtomCoordinates(foundSolution.values, "wall");
-      const wallKey = canonicalWallKey(wallCoordinates);
 
       this.solutions.push(this.makeSolution(foundSolution.values));
     }
@@ -456,7 +445,6 @@ class PuzzleSolver {
       canReach,
       wallsUsed: walls.length,
       wallCoordinates: canonicalWalls,
-      wallKey: canonicalWallKey(canonicalWalls),
       status: "OPTIMAL",
       horseReach,
       unicornReach,
