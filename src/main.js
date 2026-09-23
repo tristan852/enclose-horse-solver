@@ -361,8 +361,8 @@ class PuzzleSolver {
 
     const result = await clingo.run(
       program,
-      0,
-      ["--opt-mode=optN", `--models=${N + 1}`, "--project"],
+      N + 1,
+      ["--opt-mode=optN", "--project"],
       answerSet => {
         foundSolutions.push({
           values: [...answerSet.Value],
