@@ -391,9 +391,18 @@ function coordinatesToGrid(width, height, coordinates) {
   return grid;
 }
 
-function compareCosts(left, right) {
-  if (!left || !right || left.length !== right.length) return false;
-  return left.every((value, index) => value === right[index]);
+function compareCosts(a, b) {
+  if (a == null) return 1;
+  if (b == null) return -1;
+
+  for (let i = 0; i < Math.max(a.length, b.length); i++) {
+    const av = a[i] ?? 0;
+    const bv = b[i] ?? 0;
+
+    if (av !== bv) return av < bv ? -1 : 1;
+  }
+
+  return 0;
 }
 
 function compareWallCoordinates([x1, y1], [x2, y2]) {
@@ -461,18 +470,22 @@ class PuzzleSolver {
       }
     );
     
-    console.log(result);
-    
-    const optimalCosts = result.Models.Costs;
-    const optimalSolutions = foundSolutions.filter(
-      solution => compareCosts(solution.costs, optimalCosts)
-    );
-    
     if (result && result.Error) throw new Error(result.Error);
-
-    if (result && result.Result === "UNSATISFIABLE") {
-      return;
-    }
+    if (!result || result.Result === "UNSATISFIABLE") return;
+    
+    const optimalCosts = foundSolutions
+      .map(s => s.costs)
+      .filter(Boolean)
+      .reduce((best, costs) =>
+        best == null || compareCosts(costs, best) < 0
+          ? costs
+          : best,
+        null
+      );
+    
+    const optimalSolutions = foundSolutions.filter(
+      s => compareCosts(s.costs, optimalCosts) === 0
+    );
 
     this.hasMore = optimalSolutions.length > N;
 
