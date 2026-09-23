@@ -371,7 +371,7 @@ class PuzzleSolver {
       }
     );
     
-    console.log(results);
+    console.log(result);
     
     this.hasMore = foundSolutions.length > N;
 
