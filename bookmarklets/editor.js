@@ -113,7 +113,7 @@
 
       const game = document.querySelector("#game");
 
-      function cellCenter(x, y) {
+      function wallCellCenter(x, y) {
         const rect = game.getBoundingClientRect();
 
         return {
@@ -123,7 +123,7 @@
       }
 
       function place(x, y) {
-        const point = cellCenter(x, y);
+        const point = wallCellCenter(x, y);
 
         game.dispatchEvent(
           new MouseEvent("mousedown", {
