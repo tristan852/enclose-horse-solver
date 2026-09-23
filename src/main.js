@@ -446,7 +446,7 @@ class PuzzleSolver {
     const result = await clingo.run(
       program,
       N + 1,
-      ["--opt-mode=optN", "--project"],
+      ["--opt-mode=optN", "--project", "--parallel-mode=1"],
       answerSet => {
         const walls = parseAtomCoordinates(answerSet.Value, "wall");
         const wallKey = canonicalWallKey(walls);
