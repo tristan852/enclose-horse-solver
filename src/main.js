@@ -490,9 +490,12 @@ class PuzzleSolver {
     const { puzzle } = this;
     const walls = parseAtomCoordinates(atoms, "wall");
     const canonicalWalls = walls.slice().sort(compareWallCoordinates);
-    const covered = parseAtomCoordinates(atoms, "covered");
     const horseReach = parseReachCoordinates(atoms, "horse");
     const unicornReach = parseReachCoordinates(atoms, "unicorn");
+    const covered = [
+      ...horseReach,
+      ...(puzzle.type === "LOVERS_QUARREL" ? unicornReach : []),
+    ];
 
     const isWall = coordinatesToGrid(puzzle.width, puzzle.height, walls);
     const reachable = [...horseReach, ...unicornReach];

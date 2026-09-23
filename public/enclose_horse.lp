@@ -34,6 +34,7 @@
 % generated instance facts contain optimal_score/1 and the objective is fixed
 % to that exact value. Without the fact, Clingo remains free to optimize it.
 objective_score(S) :-
+    optimal_score(_),
     S = #sum {
         Score,X,Y : covered(X,Y), tile_score(X,Y,Score);
         costly_wall_score,X,Y : mode(costly_walls), wall(X,Y)
@@ -105,9 +106,7 @@ wall_needs_reachable_neighbour(X,Y) :-
 % Scored region
 % ------------------------------------------------------------------------------
 
-covered(X,Y) :- mode(normal), reach(horse,X,Y).
-covered(X,Y) :- mode(costly_walls), reach(horse,X,Y).
-covered(X,Y) :- mode(lovebirds), reach(horse,X,Y).
+covered(X,Y) :- not mode(lovers_quarrel), reach(horse,X,Y).
 covered(X,Y) :- mode(lovers_quarrel), reach(horse,X,Y).
 covered(X,Y) :- mode(lovers_quarrel), reach(unicorn,X,Y).
 
@@ -123,8 +122,6 @@ covered(X,Y) :- mode(lovers_quarrel), reach(unicorn,X,Y).
 % ------------------------------------------------------------------------------
 
 #show wall/2.
-#show covered/2.
 #show reach/3.
-#show wall_needs_reachable_neighbour/2.
 
 #project wall/2.

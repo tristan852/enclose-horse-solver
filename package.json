@@ -1,5 +1,5 @@
 {
-  "name": "enclose-horse-solver-live-repo",
+  "name": "enclose-horse-solver",
   "version": "1.0.0",
   "description": "The enclose.horse Solver is a standalone browser solver for [enclose.horse](https://enclose.horse/). It runs locally in the browser and supports the main puzzles and all bonus puzzle types.",
   "main": "index.js",
