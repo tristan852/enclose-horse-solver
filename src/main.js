@@ -858,7 +858,7 @@ async function main() {
 
   if (!levelEncoded) {
     console.log(
-      "No puzzle supplied. Open an enclose.horse puzzle and use the bookmarklet."
+      "No puzzle supplied. Open an enclose.horse puzzle and use the \"solve\" bookmarklet."
     );
     return;
   }
