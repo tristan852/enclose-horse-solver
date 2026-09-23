@@ -498,6 +498,7 @@ function formatBoard(puzzle, solution) {
 
 const results = document.getElementById("results");
 const install = document.getElementById("install");
+const puzzleViews = [];
 
 function bonusName(type = "bonus") {
   return {
@@ -786,9 +787,72 @@ function showPuzzle(puzzle) {
     () => resizeBoard(view.card, view.width, view.height),
     { passive: true }
   );
+
+  puzzleViews.push(view);
   
   return view;
 }
+
+function visiblePuzzleView() {
+  const views = puzzleViews.filter(view => view.card.isConnected);
+
+  if (views.length <= 1) return views[0] ?? null;
+
+  const viewportHeight = window.innerHeight;
+  const viewportCenter = viewportHeight / 2;
+
+  return views.reduce((best, view) => {
+    const rect = view.card.getBoundingClientRect();
+    const visibleHeight = Math.max(
+      0,
+      Math.min(rect.bottom, viewportHeight) - Math.max(rect.top, 0)
+    );
+    const bestRect = best.card.getBoundingClientRect();
+    const bestVisibleHeight = Math.max(
+      0,
+      Math.min(bestRect.bottom, viewportHeight) - Math.max(bestRect.top, 0)
+    );
+
+    if (visibleHeight !== bestVisibleHeight) {
+      return visibleHeight > bestVisibleHeight ? view : best;
+    }
+
+    const distance = Math.abs(
+      (rect.top + rect.bottom) / 2 - viewportCenter
+    );
+    const bestDistance = Math.abs(
+      (bestRect.top + bestRect.bottom) / 2 - viewportCenter
+    );
+
+    return distance < bestDistance ? view : best;
+  });
+}
+
+document.addEventListener("keydown", event => {
+  if (event.key !== "ArrowLeft" && event.key !== "ArrowRight") {
+    return;
+  }
+
+  const activeElement = document.activeElement;
+  if (
+    activeElement &&
+    (activeElement.matches("input, textarea, select") ||
+      activeElement.isContentEditable)
+  ) {
+    return;
+  }
+
+  const view = visiblePuzzleView();
+  if (!view) return;
+
+  const [previous, next] = view.status.querySelectorAll("button");
+  const button = event.key === "ArrowLeft" ? previous : next;
+
+  if (button?.disabled) return;
+
+  event.preventDefault();
+  button.click();
+});
 
 async function initiallySolvePuzzle(puzzle, view, staticModel) {
   let solutionIndex = 0;
