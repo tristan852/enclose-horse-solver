@@ -46,7 +46,7 @@
 
     if (
       data.budget !== undefined &&
-      (!Number.isFinite(data.budget) || data.budget < 0)
+      (!Number.isFinite(data.budget) || data.budget < 1 || data.budget > 99)
     ) {
       alert("Decoded budget is invalid.");
       return;
