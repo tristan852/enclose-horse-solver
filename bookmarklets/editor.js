@@ -354,30 +354,6 @@
       }
     }
 
-    if (groups.wall.length) {
-      selectTool("Wall (W)");
-
-      for (const [x, y] of groups.wall) {
-        paint(x, y);
-      }
-    }
-
-    if (groups.horse.length) {
-      selectTool("Horse (H)");
-
-      for (const [x, y] of groups.horse) {
-        paint(x, y);
-      }
-    }
-
-    if (groups.unicorn.length) {
-      selectTool("Unicorn (U)");
-
-      for (const [x, y] of groups.unicorn) {
-        paint(x, y);
-      }
-    }
-
     if (groups.cherry.length) {
       selectTool("Bonus (R)");
       selectBonus("Cherry (+3)");
@@ -411,6 +387,30 @@
       for (const [, cells] of Object.entries(portals)) {
         paint(...cells[0]);
         paint(...cells[1]);
+      }
+    }
+
+    if (groups.horse.length) {
+      selectTool("Horse (H)");
+
+      for (const [x, y] of groups.horse) {
+        paint(x, y);
+      }
+    }
+
+    if (groups.unicorn.length) {
+      selectTool("Unicorn (U)");
+
+      for (const [x, y] of groups.unicorn) {
+        paint(x, y);
+      }
+    }
+
+    if (groups.wall.length) {
+      selectTool("Wall (W)");
+
+      for (const [x, y] of groups.wall) {
+        paint(x, y);
       }
     }
 
