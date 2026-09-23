@@ -325,6 +325,14 @@ function compareWallCoordinates([x1, y1], [x2, y2]) {
   return y1 - y2 || x1 - x2;
 }
 
+function canonicalWallKey(coordinates) {
+  return coordinates
+    .slice()
+    .sort(compareWallCoordinates)
+    .map(([x, y]) => x + "," + y)
+    .join(";");
+}
+
 function compareWallSets(left, right) {
   const leftWalls = left.wallCoordinates;
   const rightWalls = right.wallCoordinates;
@@ -356,6 +364,7 @@ class PuzzleSolver {
   async solve() {
     const program = this.staticModel + "\n" + generateFacts(this.puzzle);
     const foundSolutions = [];
+    const seenWallKeys = new Set();
     
     const N = 80;
 
@@ -364,7 +373,12 @@ class PuzzleSolver {
       N + 1,
       ["--opt-mode=optN", "--project"],
       answerSet => {
-        // TODO check if model walls have not been seen before
+        const walls = parseAtomCoordinates(answerSet.Value, "wall");
+        const wallKey = canonicalWallKey(walls);
+
+        if (this.seenWallKeys.has(wallKey)) return;
+        this.seenWallKeys.add(wallKey);
+        
         foundSolutions.push({
           values: [...answerSet.Value],
           costs: answerSet.Costs ? [...answerSet.Costs] : null,
@@ -377,15 +391,15 @@ class PuzzleSolver {
       solution => compareCosts(solution.costs, optimalCosts)
     );
     
-    this.hasMore = foundSolutions.length > N;
-
     if (result && result.Error) throw new Error(result.Error);
 
     if (result && result.Result === "UNSATISFIABLE") {
       return;
     }
 
-    for (const foundSolution of foundSolutions.slice(0, N)) {
+    this.hasMore = optimalSolutions.length > N;
+
+    for (const foundSolution of optimalSolutions.slice(0, N)) {
 
       this.solutions.push(this.makeSolution(foundSolution.values));
     }
