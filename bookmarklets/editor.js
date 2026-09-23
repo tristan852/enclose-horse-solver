@@ -346,6 +346,22 @@
       }
     }
 
+    if (groups.horse.length) {
+      selectTool("Horse (H)");
+
+      for (const [x, y] of groups.horse) {
+        paint(x, y);
+      }
+    }
+
+    if (groups.unicorn.length) {
+      selectTool("Unicorn (U)");
+
+      for (const [x, y] of groups.unicorn) {
+        paint(x, y);
+      }
+    }
+
     if (groups.water.length) {
       selectTool("Water (T)");
 
@@ -387,22 +403,6 @@
       for (const [, cells] of Object.entries(portals)) {
         paint(...cells[0]);
         paint(...cells[1]);
-      }
-    }
-
-    if (groups.horse.length) {
-      selectTool("Horse (H)");
-
-      for (const [x, y] of groups.horse) {
-        paint(x, y);
-      }
-    }
-
-    if (groups.unicorn.length) {
-      selectTool("Unicorn (U)");
-
-      for (const [x, y] of groups.unicorn) {
-        paint(x, y);
       }
     }
 
