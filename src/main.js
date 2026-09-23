@@ -364,6 +364,7 @@ class PuzzleSolver {
       N + 1,
       ["--opt-mode=optN", "--project"],
       answerSet => {
+        // TODO check if model walls have not been seen before
         foundSolutions.push({
           values: [...answerSet.Value],
           costs: answerSet.Costs ? [...answerSet.Costs] : null,
@@ -371,7 +372,10 @@ class PuzzleSolver {
       }
     );
     
-    console.log(result);
+    const optimalCosts = result.Models.Costs;
+    const optimalSolutions = foundSolutions.filter(
+      solution => compareCosts(solution.costs, optimalCosts)
+    );
     
     this.hasMore = foundSolutions.length > N;
 
