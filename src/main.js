@@ -314,8 +314,6 @@ function generateFacts(puzzle) {
         !unicornStaticReachability[x][y]
       ) {
         facts.push(`:- wall(${x},${y}).`);
-        
-        console.log(`:- wall(${x},${y}).`);
       }
     }
   }
