@@ -357,7 +357,7 @@ class PuzzleSolver {
     const program = this.staticModel + "\n" + generateFacts(this.puzzle);
     const foundSolutions = [];
     
-    const N = 100;
+    const N = 80;
 
     const result = await clingo.run(
       program,
