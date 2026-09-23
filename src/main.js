@@ -376,8 +376,8 @@ class PuzzleSolver {
         const walls = parseAtomCoordinates(answerSet.Value, "wall");
         const wallKey = canonicalWallKey(walls);
 
-        if (this.seenWallKeys.has(wallKey)) return;
-        this.seenWallKeys.add(wallKey);
+        if (seenWallKeys.has(wallKey)) return;
+        seenWallKeys.add(wallKey);
         
         foundSolutions.push({
           values: [...answerSet.Value],
