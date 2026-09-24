@@ -612,6 +612,14 @@ function bonusName(type = "bonus") {
   }[type] || type.replace(/[-_]+/g, " ").replace(/\b\w/g, c => c.toUpperCase());
 }
 
+function editorPuzzleType(type = "bonus") {
+  return {
+    costlywalls: "costly-walls",
+    lovebirds: "lovebirds",
+    loversquarrel: "lovers-quarrel"
+  }[type] || type.replace(/[-_]+/g, " ").replace(/\b\w/g, c => c.toUpperCase());
+}
+
 function portalColor(value) {
   const colors = [
     "#7254a8", "#65afd0", "#5eaa72", "#d34d9a", "#c85f72",
@@ -857,31 +865,25 @@ function createPuzzleCard(puzzle) {
     
     try {
       
-      let p = puzzle;
-      const s = view.solution;
-      if (s) p = s.puzzle;
-    
-      console.log(p);
-      console.log(s);
-    
+      const mode = isBonus ? editorPuzzleType(puzzle.type) : "default";
       const session = {
-        mode: null,
-        width: null,
-        height: null,
-        budget: null,
+        mode: mode,
+        width: puzzle.width,
+        height: puzzle.height,
+        budget: puzzle.budget,
         tool: "grass",
         brush: 1,
-        map: null
+        map: formatBoard(puzzle, view.solution)
       };
   
       const encoded = btoa(JSON.stringify(session));
-      const url = `${import.meta.env.BASE_URL}edit/?puzzle=${encodeURIComponent(puzzleId)}`;
+      const url = `${import.meta.env.BASE_URL}edit/?session=${encodeURIComponent(encoded)}`;
       
       window.open(url, "_blank");
       
     } catch (err) {
       copying = false;
-      console.error("Failed to copy puzzle:", err);
+      console.error("Failed to open puzzle in editor:", err);
     }
   });
   
