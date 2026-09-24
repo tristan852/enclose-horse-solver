@@ -964,7 +964,7 @@ async function initiallySolvePuzzle(puzzle, view, staticModel) {
 
   async function requestSolutions() {
     const startedAt = performance.now();
-    const result = await puzzleSolver.solve();
+    const result = await puzzleSolver.solve(100);
     const elapsedMs = performance.now() - startedAt;
     const elapsed = `${elapsedMs.toFixed(1)} ms`;
   
