@@ -291,6 +291,17 @@ function initEditor() {
   const portalKey = tile =>
     tile.startsWith("portal-") ? tile.slice(7) : null;
 
+  function tileLevel(tile) {
+    if (tile === "horse" || tile === "unicorn") return 1;
+    if (portalKey(tile)) return 2;
+    if (["cherry", "apple", "bee"].includes(tile)) return 3;
+    return 4;
+  }
+
+  function canReplace(current, placed) {
+    return tileLevel(current) >= tileLevel(placed);
+  }
+
   const tileTitle = tile =>
     ({
       horse: "Neighthan",
@@ -679,6 +690,13 @@ function initEditor() {
         }
       }
     }
+  }
+
+  function clearHover() {
+    lastHoverIndex = null;
+    document.querySelectorAll(".hover-preview").forEach(cell => {
+      cell.classList.remove("hover-preview");
+    });
   }
 
   function buildGrid(next = cells) {
@@ -1116,6 +1134,12 @@ function initEditor() {
           return;
         }
 
+        if (existingPlaceholder?.index === target) {
+          portalPlaceholders.delete(portalType);
+          changed.add(target);
+          return;
+        }
+
         if (cells[target] !== "grass") return;
 
         const linked = cells
@@ -1182,19 +1206,16 @@ function initEditor() {
     } else {
       uniqueTargets.forEach(target => {
         const targetType = cells[target];
+        const animalTarget = ["horse", "unicorn"].includes(targetType);
 
-        if (type === "grass" && ["horse", "unicorn"].includes(targetType)) {
+        if (type === "water" && animalTarget && !cells.includes("grass")) {
           return;
         }
 
-        if (type === "water" && ["horse", "unicorn"].includes(targetType)) {
-          const hasFallback = cells.some(
-            (value, index) =>
-              index !== target && (value === "grass" || value === "water")
-          );
-
-          if (!hasFallback) return;
-        }
+        if (
+          !(type === "water" && animalTarget) &&
+          !canReplace(targetType, type)
+        ) return;
 
         if (type !== "grass" && type !== "water" && targetType === "water") {
           return;
@@ -1286,7 +1307,9 @@ function initEditor() {
       .getElementById("portal-palette")
       .classList.toggle("open", Boolean(portalKey(tool)));
 
-    updateHover(lastHoverIndex);
+    if (lastHoverIndex != null && board.matches(":hover")) {
+      updateHover(lastHoverIndex);
+    }
     saveUrl();
   }
 
@@ -1297,11 +1320,11 @@ function initEditor() {
 
   board.addEventListener("pointerleave", () => {
     if (!isPainting) {
-      document.querySelectorAll(".hover-preview").forEach(cell => {
-        cell.classList.remove("hover-preview");
-      });
+      clearHover();
     }
   });
+
+  document.querySelector(".toolbar").addEventListener("pointerdown", clearHover);
 
   document.querySelectorAll("[data-tool]").forEach(button => {
     button.addEventListener("click", () => setActiveTool(button.dataset.tool));
