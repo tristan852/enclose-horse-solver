@@ -111,6 +111,16 @@
       color: var(--muted);
       margin-top: 10px;
     }
+    
+    .install + .install {
+      margin-top: 24px;
+    }
+    
+    .editor-link {
+      background: #30383e !important;
+      color: var(--text) !important;
+      border-color: #59636b !important;
+    }
   
     #editor-bookmark {
       margin-top: 26px;
@@ -466,8 +476,8 @@
       Create, edit, solve, and share an enclose.horse level.
     </p>
 
-    <a href="%BASE_URL%edit/">
-      ✎ Open the level editor
+    <a class="editor-link" href="%BASE_URL%edit/">
+      Open the level editor
     </a>
   </section>
 
