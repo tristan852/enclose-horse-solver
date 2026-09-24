@@ -866,8 +866,8 @@ function createPuzzleCard(puzzle) {
     
       const session = {
         mode: null,
-        width = null,
-        height = null,
+        width: null,
+        height: null,
         budget: null,
         tool: "grass",
         brush: 1,
