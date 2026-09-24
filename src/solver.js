@@ -732,9 +732,9 @@ function createPuzzleCard(puzzle) {
 
   card.innerHTML = `
     <h2>${title}</h2>
-    <a
+    <button
       class="control-button open-puzzle"
-      href=""
+      type="button"
       aria-label="Open puzzle in editor"
       title="Open puzzle in editor"
     >
@@ -742,7 +742,7 @@ function createPuzzleCard(puzzle) {
         <rect x="8" y="8" width="11" height="11" rx="2"></rect>
         <path d="M16 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h2"></path>
       </svg>
-    </a>
+    </button>
     <button
       class="control-button copy-puzzle"
       type="button"
@@ -851,6 +851,39 @@ function createPuzzleCard(puzzle) {
     width,
     height
   };
+  
+  const otherButton = card.querySelector(".open-puzzle");
+  otherButton.addEventListener("click", async () => {
+    
+    try {
+      
+      let p = puzzle;
+      const s = view.solution;
+      if (s) p = s.puzzle;
+    
+      console.log(p);
+      console.log(s);
+    
+      const session = {
+        mode: null,
+        width = null,
+        height = null,
+        budget: null,
+        tool: "grass",
+        brush: 1,
+        map: null
+      };
+  
+      const encoded = btoa(JSON.stringify(session));
+      const url = `${import.meta.env.BASE_URL}edit/?puzzle=${encodeURIComponent(puzzleId)}`;
+      
+      window.open(url, "_blank");
+      
+    } catch (err) {
+      copying = false;
+      console.error("Failed to copy puzzle:", err);
+    }
+  });
   
   let copying = false;
   
