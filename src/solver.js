@@ -451,11 +451,17 @@ class PuzzleSolver {
     const seenWallKeys = new Set();
     
     const N = 100;
+    
+    const options = ["--opt-mode=optN", "--project"];
+    
+    if (clingo.supportsThreads()) {
+      options.push("-t", "1");
+    }
 
     const result = await clingo.run(
       program,
       N + 1,
-      ["--opt-mode=optN", "--project", "--parallel-mode=1"],
+      options,
       answerSet => {
         const walls = parseAtomCoordinates(answerSet.Value, "wall");
         const wallKey = canonicalWallKey(walls);
