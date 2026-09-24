@@ -32,7 +32,16 @@ export default defineConfig({
     minify: true,
   },
 
-  plugins: [bookmarkletPlugin()],
+  plugins: [
+    bookmarkletPlugin(),
+    {
+      name: "copy-index-for-edit",
+      closeBundle() {
+        mkdirSync("dist/edit", { recursive: true });
+        copyFileSync("dist/index.html", "dist/edit/index.html");
+      },
+    },
+  ],
 
   worker: {
     format: "es",
