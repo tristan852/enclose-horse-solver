@@ -249,7 +249,6 @@ function initEditor() {
   let unicornMemory = null;
   let computedSolutions = [];
   let solutionIndex = 0;
-  let solutionHasMore = false;
   let solveRequest = null;
   let solveCancelPromise = null;
 
@@ -565,11 +564,11 @@ function initEditor() {
       const value = cells[cellIndex];
       solutionScore +=
         value === "cherry"
-          ? 3
+          ? 4
           : value === "apple"
-            ? 10
+            ? 11
             : value === "bee"
-              ? -5
+              ? -4
               : 1;
     });
 
@@ -824,9 +823,12 @@ function initEditor() {
 
     const other = type === "horse" ? "unicorn" : "horse";
     const grass = closestIndex(anchor, value => value === "grass");
+    const water = closestIndex(anchor, value => value === "water");
     const target = grass >= 0
       ? grass
-      : closestIndex(anchor, value => value !== other);
+      : water >= 0
+        ? water
+        : closestIndex(anchor, value => value !== other);
 
     if (target >= 0) {
       removePlaceholderAt(target);
@@ -865,7 +867,7 @@ function initEditor() {
     [...board.children].forEach((cell, cellIndex) => {
       applyCell(cell, cells[cellIndex], cellIndex);
 
-      if (changed.has(cellIndex)) {
+      if (changed.has(cellIndex) && cells[cellIndex] !== "grass") {
         requestAnimationFrame(() => {
           cell.classList.remove("tile-pop");
           void cell.offsetWidth;
@@ -894,9 +896,11 @@ function initEditor() {
     }
 
     const wallCount = cells.filter(value => value === "wall").length;
+    const result = puzzleSolved
+      ? `score ${solutionScore} · solved`
+      : puzzleReason;
     statusDetail.textContent =
-      `${width} × ${height} · ${wallCount}/${budgetInput.value} walls · ` +
-      (puzzleSolved ? `score ${solutionScore} · solved` : puzzleReason);
+      `${result} · ${width} × ${height} · ${wallCount}/${budgetInput.value} walls`;
   }
 
   function resetSolveButton() {
@@ -926,7 +930,6 @@ function initEditor() {
   function invalidateSolutions() {
     computedSolutions = [];
     solutionIndex = 0;
-    solutionHasMore = false;
     cancelSolveRequest();
   }
 
@@ -980,13 +983,10 @@ function initEditor() {
 
       computedSolutions = result?.solutions || [];
       solutionIndex = 0;
-      solutionHasMore = Boolean(result?.hasMore);
 
       if (computedSolutions.length) {
         applySolution(computedSolutions[solutionIndex]);
-        updateStatus(
-          `solution 1/${computedSolutions.length}${solutionHasMore ? "+" : ""}`
-        );
+        updateStatus();
       } else {
         updateStatus("No legal solution found");
       }
@@ -1107,8 +1107,6 @@ function initEditor() {
       }
     } else if (portalKey(type)) {
       uniqueTargets.forEach(target => {
-        if (cells[target] === "water") return;
-
         const portalType = portalKey(type);
         const existingPlaceholder = portalPlaceholders.get(portalType);
 
@@ -1117,6 +1115,8 @@ function initEditor() {
           removePlaceholderAt(target);
           return;
         }
+
+        if (cells[target] !== "grass") return;
 
         const linked = cells
           .map((value, index) => value === type ? index : -1)
@@ -1181,7 +1181,24 @@ function initEditor() {
       });
     } else {
       uniqueTargets.forEach(target => {
-        if (type !== "grass" && cells[target] === "water") return;
+        const targetType = cells[target];
+
+        if (type === "grass" && ["horse", "unicorn"].includes(targetType)) {
+          return;
+        }
+
+        if (type === "water" && ["horse", "unicorn"].includes(targetType)) {
+          const hasFallback = cells.some(
+            (value, index) =>
+              index !== target && (value === "grass" || value === "water")
+          );
+
+          if (!hasFallback) return;
+        }
+
+        if (type !== "grass" && type !== "water" && targetType === "water") {
+          return;
+        }
 
         removePlaceholderAt(target);
         removePortalPairAt(target, changed);
@@ -1459,9 +1476,7 @@ function initEditor() {
     if (computedSolutions.length) {
       solutionIndex = (solutionIndex + 1) % computedSolutions.length;
       applySolution(computedSolutions[solutionIndex]);
-      updateStatus(
-        `solution ${solutionIndex + 1}/${computedSolutions.length}${solutionHasMore ? "+" : ""}`
-      );
+      updateStatus();
       return;
     }
 
