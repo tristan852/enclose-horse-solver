@@ -26,7 +26,7 @@ function editorMarkup() {
           <p class="subtitle">Create a puzzle for the herd.</p>
         </div>
         <button
-          class="copy-puzzle"
+          class="control-button"
           id="copy-puzzle"
           title="Copy puzzle and solution"
           aria-label="Copy puzzle and solution"

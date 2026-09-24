@@ -733,7 +733,7 @@ function createPuzzleCard(puzzle) {
   card.innerHTML = `
     <h2>${title}</h2>
     <button
-      class="copy-puzzle"
+      class="control-button copy-puzzle"
       type="button"
       aria-label="Copy puzzle and solution"
       title="Copy puzzle and solution"
