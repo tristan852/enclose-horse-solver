@@ -345,7 +345,7 @@
     .icon-btn svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 1.8; }
     .editor-workspace { padding: 25px 22px 22px; }
     .editor-board { box-shadow: 0 12px 28px #0005; }
-    .editor-board .cell { border: 0; color: #fff; padding: 0; cursor: crosshair; user-select: none; }
+    .editor-board .cell { border: 0; color: #fff; padding: 0; cursor: pointer; user-select: none; }
     .editor-board .cell.horse::after { content: "🐴"; }
     .editor-board .cell.unicorn::after { content: "🦄"; }
     .editor-board .cell.cherry::after { content: "🍒"; }
@@ -374,7 +374,8 @@
     .brush-grid { display: grid; grid-template-columns: repeat(var(--brush), 5px); grid-auto-rows: 5px; gap: 2px; padding: 2px; }
     .brush-grid i { display: block; width: 5px; height: 5px; border: 1px solid #cbd2d6; background: #59636b; border-radius: 1px; }
     .tool.active .brush-grid i { border-color: #f2d59c; background: #b8893f; }
-    .portal-palette { display: grid; grid-template-columns: repeat(13, 27px); justify-content: center; gap: 5px; padding: 10px 0 2px; }
+    .portal-palette { display: none; grid-template-columns: repeat(18, 27px); justify-content: center; gap: 5px; width: min(100%, 571px); margin: 0 auto; padding: 10px 0 2px; }
+    .portal-palette.open { display: grid; }
     .portal-choice { display: grid; place-items: center; width: 27px; height: 27px; border: 1px solid #ffffff42; border-radius: 6px; color: #fff; font: 700 11px ui-monospace, monospace; cursor: pointer; transition: transform .15s ease, outline .15s ease; }
     .portal-choice:hover { transform: translateY(-1px); }
     .portal-choice.active { outline: 2px solid var(--gold); outline-offset: 1px; }
@@ -455,6 +456,12 @@
     </a>
     <small>
       Use while in a level or level editor to paste a copied solution or level.
+    </small>
+    <a href="/edit">
+      ✎ Open the level editor
+    </a>
+    <small>
+      Create, edit, solve, and share an enclose.horse level.
     </small>
   </section>
 
