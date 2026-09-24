@@ -597,6 +597,7 @@ function formatBoard(puzzle, solution) {
 
 const results = document.getElementById("results");
 const install = document.getElementById("install");
+const editorLinkSection = document.getElementById("editor-link-section");
 const puzzleViews = [];
 
 function bonusName(type = "bonus") {
@@ -1056,6 +1057,7 @@ async function main() {
   const staticModel = await modelResponse.text();
 
   if (install) install.hidden = true;
+  if (editorLinkSection) editorLinkSection.hidden = true;
 
   if (!results) {
     console.error("Missing #results element");

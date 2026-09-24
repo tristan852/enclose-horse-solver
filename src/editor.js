@@ -212,10 +212,12 @@ function editorMarkup() {
 function initEditor() {
   const results = document.getElementById("results");
   const install = document.getElementById("install");
+  const editorLinkSection = document.getElementById("editor-link-section");
 
   if (!results) return;
-
   if (install) install.hidden = true;
+  if (editorLinkSection) editorLinkSection.hidden = true;
+  
   results.hidden = false;
   results.innerHTML = editorMarkup();
 
