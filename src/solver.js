@@ -875,6 +875,8 @@ function createPuzzleCard(puzzle) {
         brush: 1,
         map: formatBoard(puzzle, view.solution)
       };
+      
+      console.log(session);
   
       const encoded = btoa(JSON.stringify(session));
       const url = `${import.meta.env.BASE_URL}edit/?session=${encodeURIComponent(encoded)}`;
