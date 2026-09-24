@@ -199,7 +199,11 @@ function editorMarkup() {
 
         <div class="footer-row">
           <div class="status" id="status">
-      </div>
+            <div class="score">
+              <strong id="status-summary"></strong>
+              <small id="status-detail"></small>
+            </div>
+          </div>
           <button class="primary-btn" id="play">
             <span class="play-icon">▶</span> Play level
           </button>
@@ -222,7 +226,8 @@ function initEditor() {
   results.innerHTML = editorMarkup();
 
   const board = document.getElementById("board");
-  const status = document.getElementById("status");
+  const statusSummary = document.getElementById("status-summary");
+  const statusDetail = document.getElementById("status-detail");
   const mode = document.getElementById("mode");
   const widthInput = document.getElementById("width");
   const heightInput = document.getElementById("height");
@@ -401,8 +406,8 @@ function initEditor() {
 
   function fitBoard() {
     const available = Math.min(
-      700,
-      Math.max(0, Math.min(window.innerWidth, 1120) - 180)
+      620,
+      Math.max(0, Math.min(window.innerWidth, 960) - 88)
     );
 
     board.style.setProperty(
@@ -691,7 +696,7 @@ function initEditor() {
         const selectedType = activeTool;
 
         if (
-          selectedType !== "grass" &&
+          !["grass", "horse", "unicorn"].includes(selectedType) &&
           cells[cellIndex] === selectedType
         ) {
           activeAction.eraseType = selectedType;
@@ -879,13 +884,15 @@ function initEditor() {
 
   function updateStatus(message) {
     if (message) {
-      status.innerHTML = `<span class="toast">${message}</span>`;
+      statusSummary.textContent = "";
+      statusDetail.textContent = message;
       return;
     }
 
     const wallCount = cells.filter(value => value === "wall").length;
-    status.textContent =
-      `${width} × ${height} · ${wallCount}/${budgetInput.value} walls · ` +
+    statusSummary.textContent = `${width} × ${height}`;
+    statusDetail.textContent =
+      `${wallCount}/${budgetInput.value} walls · ` +
       (puzzleSolved ? `score ${solutionScore} · solved` : puzzleReason);
   }
 

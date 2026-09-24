@@ -346,7 +346,7 @@
       }
     }
 
-    .editor { background: var(--mode-bg, var(--panel)); border: 1px solid var(--line); border-radius: 13px; overflow: hidden; }
+    .editor { background: var(--mode-bg, var(--panel)); border: 1px solid var(--line); border-radius: 13px; overflow: hidden; transition: background-color .4s ease; }
     .editor-head { display: flex; justify-content: space-between; align-items: center; gap: 16px; padding: 20px 22px; border-bottom: 1px solid var(--line); }
     .editor-head h2 { margin: 0 0 3px; font-size: 18px; }
     .subtitle, .board-note { color: var(--muted); margin: 4px 0 0; }
@@ -378,7 +378,14 @@
     .toolbar select, .toolbar input { height: 34px; padding: 0 9px; background: #242a2f; color: var(--text); border: 1px solid var(--line); border-radius: 7px; }
     .toolbar select { min-width: 150px; } .toolbar input { width: 64px; }
     .utility-row { margin-top: 14px; justify-content: center; } .footer-row { display: flex; align-items: center; justify-content: space-between; gap: 14px; margin-top: 18px; }
-    .primary-btn { background: var(--gold); border-color: var(--gold); color: #1e170e; font-weight: 750; padding: 0 21px; height: 40px; } .secondary-btn { height: 34px; }
+    .primary-btn { background: var(--gold); border-color: var(--gold); color: #1e170e; font-weight: 750; padding: 0 21px; height: 40px; transition: background .15s ease, border-color .15s ease, transform .15s ease, box-shadow .15s ease; }
+    .primary-btn:hover:not(:disabled) { background: #e5bb78; border-color: #e5bb78; box-shadow: 0 3px 10px #0005; transform: translateY(-1px); }
+    .primary-btn:active:not(:disabled) { transform: translateY(0); box-shadow: none; }
+    .secondary-btn { height: 34px; }
+    .editor .status { justify-content: flex-start; }
+    .editor .status .score { display: flex; align-items: baseline; gap: 8px; }
+    .editor .status .score strong { color: var(--gold); font-size: 15px; }
+    .editor .status .score small { margin-left: 0; }
     .placement-row { justify-content: space-between; }
     .brush { width: 38px; height: 34px; padding: 0; }
     .brush-grid { display: grid; grid-template-columns: repeat(var(--brush), 5px); grid-auto-rows: 5px; gap: 2px; padding: 2px; }
