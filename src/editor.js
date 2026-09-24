@@ -255,7 +255,7 @@ function initEditor() {
   const portalColors = Object.fromEntries(
     portalTypes.map((key, index) => [
       key,
-      `hsl(\${(index * 37 + 258) % 360} 42% \${38 + (index % 3) * 5}%)`
+      `hsl(${(index * 37 + 258) % 360} 42% ${38 + (index % 3) * 5}%)`
     ])
   );
 
@@ -289,14 +289,14 @@ function initEditor() {
       cherry: "Cherry +3",
       apple: "Golden Apple +10",
       bee: "Bee Swarm -5"
-    })[tile] || (portalKey(tile) ? `Portal \${portalKey(tile)}` : "");
+    })[tile] || (portalKey(tile) ? `Portal ${portalKey(tile)}` : "");
 
   const encodeCell = tile =>
     TILE_CHARS[tile] || portalKey(tile) || ".";
 
   const decodeCell = character =>
     CHAR_TILES[character] ||
-    (portalTypes.includes(character) ? `portal-\${character}` : "grass");
+    (portalTypes.includes(character) ? `portal-${character}` : "grass");
 
   function restoreActionState(state) {
     cells = state.cells.slice();
@@ -357,7 +357,7 @@ function initEditor() {
     window.history.replaceState(
       null,
       "",
-      `\${location.pathname}?session=\${encodeURIComponent(encoded)}`
+      `${location.pathname}?session=${encodeURIComponent(encoded)}`
     );
   }
 
@@ -407,7 +407,7 @@ function initEditor() {
 
     board.style.setProperty(
       "--cell",
-      `\${Math.max(18, available / Math.max(width, height))}px`
+      `${Math.max(18, available / Math.max(width, height))}px`
     );
   }
 
@@ -462,7 +462,7 @@ function initEditor() {
       const key = portalKey(cells[current]);
       if (key) {
         cells.forEach((value, cellIndex) => {
-          if (value === `portal-\${key}`) {
+          if (value === `portal-${key}`) {
             neighbors.push([
               cellIndex % width,
               Math.floor(cellIndex / width)
@@ -610,9 +610,9 @@ function initEditor() {
         : "";
     const placeholder = placeholderKey ? " portal-placeholder" : "";
 
-    cell.className = `cell \${type}\${key ? " portal" : ""}\${wallState}\${enclosed}\${placeholder}`;
+    cell.className = `cell ${type}${key ? " portal" : ""}${wallState}${enclosed}${placeholder}`;
     cell.title = placeholderKey
-      ? `Portal \${placeholderKey} placeholder`
+      ? `Portal ${placeholderKey} placeholder`
       : tileTitle(type);
     cell.textContent = key ? "🌀" : "";
     cell.style.backgroundColor = key ? portalColors[key] : "";
@@ -676,8 +676,8 @@ function initEditor() {
     cells = next;
     recomputeSolution();
     board.innerHTML = "";
-    board.style.gridTemplateColumns = `repeat(\${width}, var(--cell))`;
-    board.style.gridTemplateRows = `repeat(\${height}, var(--cell))`;
+    board.style.gridTemplateColumns = `repeat(${width}, var(--cell))`;
+    board.style.gridTemplateRows = `repeat(${height}, var(--cell))`;
 
     cells.forEach((type, cellIndex) => {
       const cell = document.createElement("button");
@@ -879,14 +879,14 @@ function initEditor() {
 
   function updateStatus(message) {
     if (message) {
-      status.innerHTML = `<span class="toast">\${message}</span>`;
+      status.innerHTML = `<span class="toast">${message}</span>`;
       return;
     }
 
     const wallCount = cells.filter(value => value === "wall").length;
     status.textContent =
-      `\${width} × \${height} · \${wallCount}/\${budgetInput.value} walls · ` +
-      (puzzleSolved ? `score \${solutionScore} · solved` : puzzleReason);
+      `${width} × ${height} · ${wallCount}/${budgetInput.value} walls · ` +
+      (puzzleSolved ? `score ${solutionScore} · solved` : puzzleReason);
   }
 
   function paint(cellIndex, type) {
@@ -1180,11 +1180,11 @@ function initEditor() {
     const choice = document.createElement("button");
     choice.className = "portal-choice";
     choice.textContent = key;
-    choice.title = `Portal \${key}`;
-    choice.setAttribute("aria-label", `Portal \${key}`);
+    choice.title = `Portal ${key}`;
+    choice.setAttribute("aria-label", `Portal ${key}`);
     choice.style.backgroundColor = portalColors[key];
     choice.dataset.portal = key;
-    choice.addEventListener("click", () => setActiveTool(`portal-\${key}`));
+    choice.addEventListener("click", () => setActiveTool(`portal-${key}`));
     document.getElementById("portal-palette").appendChild(choice);
   });
 
@@ -1207,7 +1207,7 @@ function initEditor() {
     recomputeSolution();
     render();
     finishAction();
-    updateStatus(`\${mode.options[mode.selectedIndex].text} mode selected`);
+    updateStatus(`${mode.options[mode.selectedIndex].text} mode selected`);
     setTimeout(updateStatus, 1300);
   });
 
