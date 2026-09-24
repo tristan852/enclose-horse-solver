@@ -868,8 +868,8 @@ function createPuzzleCard(puzzle) {
       const mode = isBonus ? editorPuzzleType(puzzle.type) : "default";
       const session = {
         mode: mode,
-        width: puzzle.width,
-        height: puzzle.height,
+        width: width,
+        height: height,
         budget: puzzle.budget,
         tool: "grass",
         brush: 1,
