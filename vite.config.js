@@ -36,7 +36,7 @@ export default defineConfig({
     bookmarkletPlugin(),
     {
       name: "copy-index-for-edit",
-      async closeBundle() {
+      async writeBundle() {
         await fs.mkdir("dist/edit", { recursive: true });
         await fs.copyFile("dist/index.html", "dist/edit/index.html");
       },
