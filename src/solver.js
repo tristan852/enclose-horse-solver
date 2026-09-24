@@ -732,6 +732,17 @@ function createPuzzleCard(puzzle) {
 
   card.innerHTML = `
     <h2>${title}</h2>
+    <a
+      class="control-button open-puzzle"
+      href=""
+      aria-label="Open puzzle in editor"
+      title="Open puzzle in editor"
+    >
+      <svg viewBox="0 0 24 24" aria-hidden="true">
+        <rect x="8" y="8" width="11" height="11" rx="2"></rect>
+        <path d="M16 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h2"></path>
+      </svg>
+    </a>
     <button
       class="control-button copy-puzzle"
       type="button"
