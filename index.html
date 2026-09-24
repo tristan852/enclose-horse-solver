@@ -378,7 +378,6 @@
       text-align: center;
     }
   
-    .icon-btn,
     .tool,
     .secondary-btn,
     .primary-btn {
@@ -387,21 +386,6 @@
       color: var(--text);
       border-radius: 8px;
       cursor: pointer;
-    }
-  
-    .icon-btn {
-      width: 36px;
-      height: 36px;
-      display: grid;
-      place-items: center;
-    }
-  
-    .icon-btn svg {
-      width: 16px;
-      height: 16px;
-      fill: none;
-      stroke: currentColor;
-      stroke-width: 1.8;
     }
   
     .editor-workspace {
@@ -762,8 +746,7 @@
     }
   
     .tool:disabled,
-    .secondary-btn:disabled,
-    .icon-btn:disabled {
+    .secondary-btn:disabled {
       cursor: not-allowed;
       opacity: 0.38;
       box-shadow: none;

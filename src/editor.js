@@ -26,16 +26,16 @@ function editorMarkup() {
           <p class="subtitle">Create a puzzle for the herd.</p>
         </div>
         <button
-          class="icon-btn"
+          class="copy-puzzle"
           id="copy-puzzle"
           title="Copy puzzle and solution"
           aria-label="Copy puzzle and solution"
         >
           <svg viewBox="0 0 24 24" aria-hidden="true">
             <rect x="8" y="8" width="11" height="11" rx="2">
-      </rect>
+            </rect>
             <path d="M16 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h2">
-      </path>
+            </path>
           </svg>
         </button>
       </div>
