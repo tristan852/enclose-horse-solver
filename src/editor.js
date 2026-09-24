@@ -1,3 +1,5 @@
+import { PuzzleSolver, cancelSolver, parsePuzzle } from "./solver.js";
+
 const TILE_CHARS = {
   grass: ".",
   water: "~",
@@ -200,7 +202,6 @@ function editorMarkup() {
         <div class="footer-row">
           <div class="status" id="status">
             <div class="score">
-              <strong id="status-summary"></strong>
               <small id="status-detail"></small>
             </div>
           </div>
@@ -226,7 +227,6 @@ function initEditor() {
   results.innerHTML = editorMarkup();
 
   const board = document.getElementById("board");
-  const statusSummary = document.getElementById("status-summary");
   const statusDetail = document.getElementById("status-detail");
   const mode = document.getElementById("mode");
   const widthInput = document.getElementById("width");
@@ -247,6 +247,11 @@ function initEditor() {
   let portalCounter = 0;
   let playMode = false;
   let unicornMemory = null;
+  let computedSolutions = [];
+  let solutionIndex = 0;
+  let solutionHasMore = false;
+  let solveRequest = null;
+  let solveCancelPromise = null;
 
   let solutionCells = new Set();
   let enclosedCells = new Set();
@@ -406,7 +411,7 @@ function initEditor() {
 
   function fitBoard() {
     const available = Math.min(
-      620,
+      520,
       Math.max(0, Math.min(window.innerWidth, 960) - 88)
     );
 
@@ -884,16 +889,115 @@ function initEditor() {
 
   function updateStatus(message) {
     if (message) {
-      statusSummary.textContent = "";
       statusDetail.textContent = message;
       return;
     }
 
     const wallCount = cells.filter(value => value === "wall").length;
-    statusSummary.textContent = `${width} × ${height}`;
     statusDetail.textContent =
-      `${wallCount}/${budgetInput.value} walls · ` +
+      `${width} × ${height} · ${wallCount}/${budgetInput.value} walls · ` +
       (puzzleSolved ? `score ${solutionScore} · solved` : puzzleReason);
+  }
+
+  function resetSolveButton() {
+    const button = document.getElementById("solve");
+    button.textContent = "◆";
+    button.title = "Solve";
+    button.setAttribute("aria-label", "Solve");
+  }
+
+  function markSolveButtonBusy() {
+    const button = document.getElementById("solve");
+    button.textContent = "×";
+    button.title = "Cancel solve";
+    button.setAttribute("aria-label", "Cancel solve");
+  }
+
+  function cancelSolveRequest() {
+    if (!solveRequest) return;
+
+    solveRequest.cancelled = true;
+    solveRequest.controller.abort();
+    solveRequest = null;
+    solveCancelPromise = cancelSolver().catch(() => {});
+    resetSolveButton();
+  }
+
+  function invalidateSolutions() {
+    computedSolutions = [];
+    solutionIndex = 0;
+    solutionHasMore = false;
+    cancelSolveRequest();
+  }
+
+  function applySolution(solution) {
+    const before = snapshot();
+    beginAction("solve");
+    cells = cells.map(tile => tile === "wall" ? "grass" : tile);
+
+    for (let x = 0; x < width; x++) {
+      for (let y = 0; y < height; y++) {
+        if (solution.isWall[x]?.[y]) cells[index(x, y)] = "wall";
+      }
+    }
+
+    render(changedIndices(before));
+    finishAction();
+  }
+
+  async function requestSolutions() {
+    if (solveCancelPromise) {
+      await solveCancelPromise;
+      solveCancelPromise = null;
+    }
+
+    const request = {
+      cancelled: false,
+      controller: new AbortController()
+    };
+    solveRequest = request;
+    markSolveButtonBusy();
+    updateStatus("finding optimal solutions…");
+
+    try {
+      const response = await fetch(
+        import.meta.env.BASE_URL + "enclose_horse.lp",
+        { signal: request.controller.signal }
+      );
+
+      if (!response.ok) throw new Error("Could not load the solver model.");
+
+      const staticModel = await response.text();
+      const solverMap = encodeMap().replaceAll("W", ".");
+      const puzzle = parsePuzzle(
+        { map: solverMap, budget: Number(budgetInput.value), bonusType: mode.value },
+        true
+      );
+      const solver = new PuzzleSolver(puzzle, staticModel);
+      const result = await solver.solve(30);
+
+      if (request.cancelled || solveRequest !== request) return;
+
+      computedSolutions = result?.solutions || [];
+      solutionIndex = 0;
+      solutionHasMore = Boolean(result?.hasMore);
+
+      if (computedSolutions.length) {
+        applySolution(computedSolutions[solutionIndex]);
+        updateStatus(
+          `solution 1/${computedSolutions.length}${solutionHasMore ? "+" : ""}`
+        );
+      } else {
+        updateStatus("No legal solution found");
+      }
+    } catch (error) {
+      if (!request.cancelled) updateStatus(error.name === "AbortError" ? "Solve cancelled" : "Could not solve level");
+    } finally {
+      if (solveRequest === request) {
+        solveRequest = null;
+        resetSolveButton();
+      }
+    }
   }
 
   function paint(cellIndex, type) {
@@ -956,6 +1060,7 @@ function initEditor() {
       });
 
       ensureAnimals(anchors);
+      if (changed.size && eraseType !== "wall") invalidateSolutions();
       if (changed.size) render(changed);
       return;
     }
@@ -1089,10 +1194,12 @@ function initEditor() {
     }
 
     ensureAnimals(anchors);
+    if (changed.size && type !== "wall") invalidateSolutions();
     render(changed);
   }
 
   function resize() {
+    invalidateSolutions();
     const newWidth = clamp(Number(widthInput.value) || 12, 8, 30);
     const newHeight = clamp(Number(heightInput.value) || 12, 8, 30);
 
@@ -1207,6 +1314,7 @@ function initEditor() {
   });
 
   mode.addEventListener("change", () => {
+    invalidateSolutions();
     const anchors = animalPositions();
     beginAction("change mode");
     ensureAnimals(anchors);
@@ -1221,6 +1329,7 @@ function initEditor() {
   widthInput.addEventListener("change", resize);
   heightInput.addEventListener("change", resize);
   budgetInput.addEventListener("change", () => {
+    invalidateSolutions();
     const wallCount = cells.filter(value => value === "wall").length;
     budgetInput.value = clamp(
       Math.max(wallCount, Number(budgetInput.value) || 1),
@@ -1232,6 +1341,7 @@ function initEditor() {
   });
 
   document.getElementById("undo").addEventListener("click", () => {
+    invalidateSolutions();
     if (!history.length) return;
 
     const action = history.pop();
@@ -1242,6 +1352,7 @@ function initEditor() {
   });
 
   document.getElementById("redo").addEventListener("click", () => {
+    invalidateSolutions();
     if (!future.length) return;
 
     const action = future.pop();
@@ -1261,6 +1372,7 @@ function initEditor() {
   });
 
   document.getElementById("clear-all").addEventListener("click", () => {
+    invalidateSolutions();
     const before = snapshot();
     beginAction("clear level");
     portalPlaceholders.clear();
@@ -1326,6 +1438,7 @@ function initEditor() {
   }
 
   document.getElementById("random").addEventListener("click", () => {
+    invalidateSolutions();
     const before = snapshot();
     beginAction("random level");
     portalPlaceholders.clear();
@@ -1336,27 +1449,23 @@ function initEditor() {
     setTimeout(updateStatus, 1300);
   });
 
-  document.getElementById("solve").addEventListener("click", () => {
-    const before = snapshot();
-    beginAction("solve");
-    portalPlaceholders.clear();
-    updateStatus("Finding a solution…");
+  document.getElementById("solve").addEventListener("click", async () => {
+    if (solveRequest) {
+      cancelSolveRequest();
+      updateStatus("Solve cancelled");
+      return;
+    }
 
-    setTimeout(() => {
-      cells = cells.map(tile => tile === "wall" ? "grass" : tile);
-      cells
-        .map((tile, cellIndex) => tile === "grass" ? cellIndex : -1)
-        .filter(cellIndex => cellIndex >= 0)
-        .slice(0, 4)
-        .forEach(cellIndex => {
-          cells[cellIndex] = "wall";
-        });
+    if (computedSolutions.length) {
+      solutionIndex = (solutionIndex + 1) % computedSolutions.length;
+      applySolution(computedSolutions[solutionIndex]);
+      updateStatus(
+        `solution ${solutionIndex + 1}/${computedSolutions.length}${solutionHasMore ? "+" : ""}`
+      );
+      return;
+    }
 
-      render(changedIndices(before));
-      finishAction();
-      updateStatus("Solution preview added");
-      setTimeout(updateStatus, 1500);
-    }, 700);
+    await requestSolutions();
   });
 
   document.getElementById("copy-puzzle").addEventListener("click", async event => {

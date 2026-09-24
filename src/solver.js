@@ -123,7 +123,7 @@ function puzzleType(type) {
   }
 }
 
-function parsePuzzle(level, isBonus = false) {
+export function parsePuzzle(level, isBonus = false) {
   if (!level || typeof level.map !== "string") {
     throw new Error("Invalid puzzle: missing map.");
   }
@@ -437,7 +437,7 @@ function compareWallSets(left, right) {
   return 0;
 }
 
-class PuzzleSolver {
+export class PuzzleSolver {
   constructor(puzzle, staticModel) {
     this.puzzle = puzzle;
     this.staticModel = staticModel;
@@ -445,12 +445,12 @@ class PuzzleSolver {
     this.hasMore = false;
   }
 
-  async solve() {
+  async solve(limit = 30) {
     const program = this.staticModel + "\n" + generateFacts(this.puzzle);
     const foundSolutions = [];
     const seenWallKeys = new Set();
     
-    const N = 100;
+    const N = limit;
     
     const options = ["--opt-mode=optN", "--project"];
     
@@ -575,6 +575,10 @@ class PuzzleSolver {
   }
 }
 
+export async function cancelSolver() {
+  await clingo.restart();
+}
+
 function formatBoard(puzzle, solution) {
   if (!solution) return puzzle.map;
 
@@ -620,7 +624,7 @@ function portalColor(value) {
 
 function resizeBoard(card, width, height) {
   const available = Math.min(
-    620,
+    520,
     Math.max(0, Math.min(window.innerWidth, 960) - 88)
   );
 
