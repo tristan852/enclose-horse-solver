@@ -30,17 +30,17 @@ export default defineConfig({
 
   build: {
     minify: true,
+
+    rollupOptions: {
+      input: {
+        main: "index.html",
+        edit: "edit/index.html",
+      },
+    },
   },
 
   plugins: [
     bookmarkletPlugin(),
-    {
-      name: "copy-index-for-edit",
-      async closeBundle() {
-        await fs.mkdir("dist/edit", { recursive: true });
-        await fs.copyFile("dist/index.html", "dist/edit/index.html");
-      },
-    },
   ],
 
   worker: {
