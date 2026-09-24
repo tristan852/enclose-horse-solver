@@ -843,8 +843,8 @@ function createPuzzleCard(puzzle) {
   
   let copying = false;
   
-  card.querySelector(".copy-puzzle").addEventListener("click", async () => {
-    const button = card.querySelector(".copy-puzzle");
+  const button = card.querySelector(".copy-puzzle");
+  button.addEventListener("click", async () => {
   
     if(copying) return;
     copying = true;
