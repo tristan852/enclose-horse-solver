@@ -307,7 +307,7 @@ function initEditor() {
   }
 
   function canReplace(current, placed) {
-    if(placed === "grass") return tileLevel(current) > 1;
+    if(placed === "grass" || placed == "water") return tileLevel(current) > 1;
   
     return tileLevel(current) >= tileLevel(placed);
   }
