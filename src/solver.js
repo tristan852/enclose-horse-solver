@@ -897,16 +897,15 @@ function createPuzzleCard(puzzle) {
       
       const encoded = btoa(JSON.stringify(data));
       await navigator.clipboard.writeText(encoded);
-  
-      button.innerHTML = "✓";
-  
+      
+      button.innerHTML = `<i data-lucide="check"></i>`;
+      lucide.createIcons({ root: button });
+      
       setTimeout(() => {
-        button.innerHTML = `
-          <svg viewBox="0 0 24 24" aria-hidden="true">
-            <rect x="8" y="8" width="11" height="11" rx="2"></rect>
-            <path d="M16 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h2"></path>
-          </svg>
-        `;
+        
+        button.innerHTML = `<i data-lucide="copy"></i>`;
+        lucide.createIcons({ root: button });
+        
         copying = false;
       }, 2000);
   
