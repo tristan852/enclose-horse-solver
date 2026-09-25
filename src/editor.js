@@ -1423,13 +1423,16 @@ function initEditor() {
   });
 
   function generateRandomLevel() {
-    const pondMinProbability = 0.002;
-    const pondMaxProbability = 0.02;
+    const pondMinProbability = 0.01;
+    const pondMaxProbability = 0.03;
     const branchProbability = 0.25;
-    const minPondSize = 2;
-    const maxPondSize = 16;
-    const pondSizeTemperature = 0.7;
-  
+    const minPondSize = 1;
+    const maxPondSize = 15;
+    const minPondSizeTemperature = 1.0;
+    const maxPondSizeTemperature = 3.0;
+    
+    const pondSizeTemperature = minPondSizeTemperature + Math.random() * (maxPondSizeTemperature - minPondSizeTemperature);
+    
     cells = Array.from({ length: width * height }, () => "grass");
     const probability = pondMinProbability + Math.random() * (pondMaxProbability - pondMinProbability);
     const directions = [[1, 0], [-1, 0], [0, 1], [0, -1]];
