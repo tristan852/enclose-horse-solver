@@ -80,15 +80,15 @@ function editorMarkup() {
               <span class="tool-label">Place</span>
               <button class="tool icon-tool active" data-tool="grass" aria-label="Grass" title="Grass">
                 <span class="terrain-swatch grass">
-      </span>
+                </span>
               </button>
               <button class="tool icon-tool" data-tool="water" aria-label="Water" title="Water">
                 <span class="terrain-swatch water">
-      </span>
+                </span>
               </button>
               <button class="tool icon-tool" data-tool="wall" aria-label="Wall" title="Wall">
                 <span class="terrain-swatch wall">
-      </span>
+                </span>
               </button>
               <button class="tool icon-tool" data-tool="horse" aria-label="Horse" title="Horse">🐴</button>
               <button class="tool icon-tool unicorn-tool" data-tool="unicorn" aria-label="Unicorn" title="Unicorn">🦄</button>
@@ -1469,15 +1469,18 @@ function initEditor() {
         : -1;
     };
 
-    const center = index(centerOffset(width), centerOffset(height));
+    let center = index(centerOffset(width), centerOffset(height));
 
+    const horse = chooseGrass();
+    cells[horse >= 0 ? horse : center] = "horse";
+    
     if (mode.value === "lovebirds" || mode.value === "lovers-quarrel") {
+      
+      if(cells[center] === "horse") center = index(centerOffset(width), centerOffset(height) - 1);
+    
       const unicorn = chooseGrass();
       cells[unicorn >= 0 ? unicorn : center] = "unicorn";
     }
-    
-    const horse = chooseGrass();
-    cells[horse >= 0 ? horse : center] = "horse";
 
     ensureAnimals(animalPositions());
   }
