@@ -625,7 +625,7 @@ export function portalColor(value) {
     const portalId = code >= 97 ? code - 87 : code - 48;
 
     const hue = (198 + portalId * 37) % 360;
-    return `hsl(${hue}, 33%, 49%)`;
+    return `hsl(${hue}, 49%, 48%)`;
 }
 
 function resizeBoard(card, width, height) {
