@@ -746,10 +746,7 @@ function createPuzzleCard(puzzle) {
       aria-label="Open puzzle in editor"
       title="Open puzzle in editor"
     >
-      <svg viewBox="0 0 24 24" aria-hidden="true">
-        <rect x="8" y="8" width="11" height="11" rx="2"></rect>
-        <path d="M16 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h2"></path>
-      </svg>
+      <i data-lucide="external-link"></i>
     </button>
     <button
       class="control-button copy-puzzle"
@@ -757,10 +754,7 @@ function createPuzzleCard(puzzle) {
       aria-label="Copy puzzle and solution"
       title="Copy puzzle and solution"
     >
-      <svg viewBox="0 0 24 24" aria-hidden="true">
-        <rect x="8" y="8" width="11" height="11" rx="2"></rect>
-        <path d="M16 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h2"></path>
-      </svg>
+      <i data-lucide="copy"></i>
     </button>
     <div class="meta">
       Puzzle ${puzzle.id || ""} · ${width} x ${height} · wall budget: ${puzzle.budget}
