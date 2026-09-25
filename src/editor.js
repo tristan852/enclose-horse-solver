@@ -174,10 +174,6 @@ function editorMarkup() {
       </i>
       <i>
       </i>
-      <i>
-      </i>
-      <i>
-      </i>
       </span>
               </button>
             </div>
