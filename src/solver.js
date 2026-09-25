@@ -620,12 +620,12 @@ function editorPuzzleType(type = "bonus") {
   }[type] || type.replace(/[-_]+/g, " ").replace(/\b\w/g, c => c.toUpperCase());
 }
 
-function portalColor(value) {
+export function portalColor(value) {
     const code = String(value).charCodeAt(0);
     const portalId = code >= 97 ? code - 87 : code - 48;
 
     const hue = (198 + portalId * 37) % 360;
-    return `hsl(${hue}, 94%, 79%)`;
+    return `hsl(${hue}, 33%, 49%)`;
 }
 
 function resizeBoard(card, width, height) {
