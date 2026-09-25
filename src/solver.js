@@ -621,13 +621,13 @@ function editorPuzzleType(type = "bonus") {
 }
 
 function portalColor(value) {
-  const colors = [
-    "#7254a8", "#65afd0", "#5eaa72", "#d34d9a", "#c85f72",
-    "#c4a447", "#8b78c7", "#4d9c9c", "#b56b55", "#7d8fc4"
-  ];
-
-  let index = String(value).charCodeAt(0) % colors.length;
-  return colors[index];
+  const portalId = String(value).charCodeAt(0) >= 97
+      ? String(value).charCodeAt(0) - 87
+      : String(value).charCodeAt(0) - 48;
+  
+  const hue = (198 + portalId * 37) % 360;
+  const color = hslToRgb(hue, 0.94, 0.79);
+  return `rgb(${r}, ${g}, ${b})`;
 }
 
 function resizeBoard(card, width, height) {
