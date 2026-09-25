@@ -1424,24 +1424,45 @@ function initEditor() {
 
   function generateRandomLevel() {
     const pondMinProbability = 0.05;
-    const pondMaxProbability = 0.1;
-    const branchProbability = 0.25;
+    const pondMaxProbability = 0.2;
+    const branchProbability = 0.5;
     const minPondSize = 1;
-    const maxPondSize = 15;
-    const minPondSizeTemperature = 1.0;
-    const maxPondSizeTemperature = 3.0;
+    const maxPondSize = 5;
+    const minPondSizeTemperature = 0.1;
+    const maxPondSizeTemperature = 0.5;
+    const minPondDistance = 5;
     
-    const pondSizeTemperature = minPondSizeTemperature + Math.random() * (maxPondSizeTemperature - minPondSizeTemperature);
+    const sparseness = Math.random();
+    const pondSizeTemperature = minPondSizeTemperature + sparseness * (maxPondSizeTemperature - minPondSizeTemperature);
     
     cells = Array.from({ length: width * height }, () => "grass");
-    const probability = pondMinProbability + Math.random() * (pondMaxProbability - pondMinProbability);
+    const probability = pondMinProbability + sparseness * (pondMaxProbability - pondMinProbability);
     const directions = [[1, 0], [-1, 0], [0, 1], [0, -1]];
 
-    for (let start = 0; start < cells.length; start++) {
-      if (Math.random() >= probability) continue;
+    const seedAmount = Math.round(width * height * probability);
+    const seedDistance = minPondDistance * (1.0 - sparseness);
+    const seeds = [];
+    
+    for (let i = 0; i < seedAmount; i++) {
+      const x = Math.floor(Math.random() * width);
+      const y = Math.floor(Math.random() * height);
+    
+      // Check distance to all existing seeds
+      const valid = seeds.every(([sx, sy]) => {
+        const dx = x - sx;
+        const dy = y - sy;
+        return dx * dx + dy * dy >= seedDistance * seedDistance;
+      });
+    
+      if (valid) {
+        seeds.push([x, y]);
+      }
+    }
 
-      let x = start % width;
-      let y = Math.floor(start / width);
+    for (const [x0, y0] of seeds) {
+      
+      let x = x0;
+      let y = y0;
       
       const steps = minPondSize + Math.floor(Math.pow(Math.random(), pondSizeTemperature) * (maxPondSize - minPondSize + 1));
 
