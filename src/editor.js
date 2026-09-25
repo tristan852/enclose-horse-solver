@@ -1052,11 +1052,11 @@ function initEditor() {
 
     const uniqueTargets = [...new Set(targets)].sort((first, second) => {
       const firstDistance =
-        (first % width - x) ** 2 +
-        (Math.floor(first / width) - y) ** 2;
+        (first % width - x - 0.5) ** 2 +
+        (Math.floor(first / width) - y - 0.5) ** 2;
       const secondDistance =
-        (second % width - x) ** 2 +
-        (Math.floor(second / width) - y) ** 2;
+        (second % width - x - 0.5) ** 2 +
+        (Math.floor(second / width) - y - 0.5) ** 2;
 
       return firstDistance - secondDistance;
     });
