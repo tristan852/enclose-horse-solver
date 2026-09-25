@@ -1425,9 +1425,21 @@ function initEditor() {
     invalidateSolutions();
     const before = snapshot();
     beginAction("clear level");
+    
     portalPlaceholders.clear();
     cells = Array.from({ length: width * height }, () => "grass");
-    ensureAnimals(activeAction.anchors);
+    
+    let center = index(centerOffset(width), centerOffset(height));
+    cells[center] = "horse";
+    
+    if (mode.value === "lovebirds" || mode.value === "lovers-quarrel") {
+      
+      center = index(centerOffset(width), centerOffset(height) - 1);
+      cells[center] = "unicorn";
+    }
+
+    ensureAnimals(animalPositions());
+    
     render(changedIndices(before));
     finishAction();
   });
