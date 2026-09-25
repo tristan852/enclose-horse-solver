@@ -1033,6 +1033,7 @@ function initEditor() {
     const startY = y - offset;
     const targets = [];
     const changed = new Set();
+    const measureOffset = size % 2 === 0 ? 0.5 : 0.0;
 
     for (let dy = 0; dy < size; dy++) {
       for (let dx = 0; dx < size; dx++) {
@@ -1052,11 +1053,11 @@ function initEditor() {
 
     const uniqueTargets = [...new Set(targets)].sort((first, second) => {
       const firstDistance =
-        (first % width - x - 0.5) ** 2 +
-        (Math.floor(first / width) - y - 0.5) ** 2;
+        (first % width - x - measureOffset) ** 2 +
+        (Math.floor(first / width) - y - measureOffset) ** 2;
       const secondDistance =
-        (second % width - x - 0.5) ** 2 +
-        (Math.floor(second / width) - y - 0.5) ** 2;
+        (second % width - x - measureOffset) ** 2 +
+        (Math.floor(second / width) - y - measureOffset) ** 2;
 
       return firstDistance - secondDistance;
     });
