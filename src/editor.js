@@ -1561,8 +1561,12 @@ function initEditor() {
     await requestSolutions();
   });
 
-  document.getElementById("copy-puzzle").addEventListener("click", async event => {
+  let copying = false;
+
+  const button = document.getElementById("copy-puzzle");
+  button.addEventListener("click", async event => {
     try {
+      
       const encoded = btoa(
         JSON.stringify({
           map: encodeMap(),
@@ -1571,17 +1575,25 @@ function initEditor() {
       );
 
       await navigator.clipboard.writeText(encoded);
-      event.currentTarget.innerHTML = "✓";
+      
+      if(copying) return;
+      copying = true;
+      
+      button.innerHTML = `<i data-lucide="check"></i>`;
+      lucide.createIcons({ root: button });
 
       setTimeout(() => {
-        event.currentTarget.innerHTML = `
-          <svg viewBox="0 0 24 24" aria-hidden="true">
-            <rect x="8" y="8" width="11" height="11" rx="2"></rect>
-            <path d="M16 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h2"></path>
-          </svg>
-        `;
-      }, 1200);
-    } catch {}
+        
+        button.innerHTML = `<i data-lucide="copy"></i>`;
+        lucide.createIcons({ root: button });
+        
+        copying = false;
+      }, 2000);
+      
+    } catch (err) {
+      copying = false;
+      console.error("Failed to copy puzzle:", err);
+    }
   });
 
   document.getElementById("play").addEventListener("click", event => {

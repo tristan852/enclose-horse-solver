@@ -884,9 +884,6 @@ function createPuzzleCard(puzzle) {
   const button = card.querySelector(".copy-puzzle");
   button.addEventListener("click", async () => {
   
-    if(copying) return;
-    copying = true;
-  
     try {
       const data = {
         map: formatBoard(puzzle, view.solution),
@@ -895,6 +892,9 @@ function createPuzzleCard(puzzle) {
       
       const encoded = btoa(JSON.stringify(data));
       await navigator.clipboard.writeText(encoded);
+      
+      if(copying) return;
+      copying = true;
       
       button.innerHTML = `<i data-lucide="check"></i>`;
       lucide.createIcons({ root: button });
