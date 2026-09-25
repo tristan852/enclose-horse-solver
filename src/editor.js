@@ -31,12 +31,7 @@ function editorMarkup() {
           title="Copy puzzle and solution"
           aria-label="Copy puzzle and solution"
         >
-          <svg viewBox="0 0 24 24" aria-hidden="true">
-            <rect x="8" y="8" width="11" height="11" rx="2">
-            </rect>
-            <path d="M16 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h2">
-            </path>
-          </svg>
+          <i data-lucide="copy"></i>
         </button>
       </div>
 
