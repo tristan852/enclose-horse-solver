@@ -189,12 +189,24 @@ function editorMarkup() {
           <div class="tool-row utility-row">
             <div class="tool-group">
               <span class="tool-label">Actions</span>
-              <button class="secondary-btn icon-tool" id="undo" aria-label="Undo" title="Undo">↶</button>
-              <button class="secondary-btn icon-tool" id="redo" aria-label="Redo" title="Redo">↷</button>
-              <button class="secondary-btn icon-tool danger" id="clear-walls" aria-label="Clear walls" title="Clear walls">⟳</button>
-              <button class="secondary-btn icon-tool danger" id="clear-all" aria-label="Clear all" title="Clear all">♻</button>
-              <button class="secondary-btn icon-tool" id="random" aria-label="Random level" title="Random level">⚄</button>
-              <button class="secondary-btn icon-tool" id="solve" aria-label="Solve" title="Solve">◆</button>
+              <button class="secondary-btn icon-tool" id="undo" aria-label="Undo" title="Undo">
+                <i data-lucide="undo"></i>
+              </button>
+              <button class="secondary-btn icon-tool" id="redo" aria-label="Redo" title="Redo">
+                <i data-lucide="redo"></i>
+              </button>
+              <button class="secondary-btn icon-tool danger" id="clear-walls" aria-label="Clear walls" title="Clear walls">
+                <i data-lucide="rotate-ccw"></i>
+              </button>
+              <button class="secondary-btn icon-tool danger" id="clear-all" aria-label="Clear all" title="Clear all">
+                <i data-lucide="trash"></i>
+              </button>
+              <button class="secondary-btn icon-tool" id="random" aria-label="Random level" title="Random level">
+                <i data-lucide="dices"></i>
+              </button>
+              <button class="secondary-btn icon-tool" id="solve" aria-label="Solve" title="Solve">
+                <i data-lucide="sparkle"></i>
+              </button>
             </div>
           </div>
         </div>
