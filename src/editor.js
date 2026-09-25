@@ -1,4 +1,4 @@
-import { PuzzleSolver, cancelSolver, parsePuzzle, portalColor } from "./solver.js";
+import { PuzzleSolver, cancelSolver, parsePuzzle, portalColor, waterGetsBoat, waterGetsWave } from "./solver.js";
 
 const TILE_CHARS = {
   grass: ".",
@@ -641,11 +641,14 @@ function initEditor() {
     }
 
     if (type === "water") {
-      const effect = cellIndex % 29 === 0
-        ? "boat"
-        : cellIndex % 7 === 0
-          ? "wave"
-          : "";
+    
+      const x = cellIndex % width;
+      const y = Math.floor(cellIndex / width);
+      
+      const effect =
+        waterGetsBoat(x, y, width) ? "boat" :
+        waterGetsWave(x, y, width) ? "wave" :
+        "";
 
       if (effect) cell.classList.add(effect);
     }

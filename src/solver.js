@@ -628,6 +628,22 @@ export function portalColor(value) {
     return `hsl(${hue}, 49%, 48%)`;
 }
 
+export function waterGetsBoat(x, y, width) {
+  const index = y * width + x;
+  const w = Math.sin(49380 + index * 67890) * 1e4;
+  const v = w - Math.floor(w);
+  
+  return v < 0.006;
+}
+
+export function waterGetsWave(x, y, width) {
+    const index = y * width + x;
+    const w = Math.sin(24690 + index * 67890) * 1e4;
+    const v = w - Math.floor(w);
+
+    return v < 0.7;
+}
+
 function resizeBoard(card, width, height) {
   const available = Math.min(
     520,
@@ -794,11 +810,12 @@ function createPuzzleCard(puzzle) {
         (isPortal ? " portal" : "");
 
       if (symbol === "~") {
-        const n = (x * 31 + y * 17 + 7) % 29;
+        
         cell.textContent =
-          n === 0 ? "⛵" :
-          n < 5 ? "🌊" :
+          waterGetsBoat(x, y, width) ? "⛵" :
+          waterGetsWave(x, y, width) ? "🌊" :
           "";
+          
       } else if (isPortal) {
         cell.textContent = "🌀";
         cell.style.backgroundColor = portalColor(symbol);
