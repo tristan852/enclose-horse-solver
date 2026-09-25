@@ -621,13 +621,13 @@ function editorPuzzleType(type = "bonus") {
 }
 
 function portalColor(value) {
-  const portalId = String(value).charCodeAt(0) >= 97
-      ? String(value).charCodeAt(0) - 87
-      : String(value).charCodeAt(0) - 48;
-  
-  const hue = (198 + portalId * 37) % 360;
-  const color = hslToRgb(hue, 0.94, 0.79);
-  return `rgb(${r}, ${g}, ${b})`;
+    const code = String(value).charCodeAt(0);
+    const portalId = code >= 97 ? code - 87 : code - 48;
+
+    const hue = (198 + portalId * 37) % 360;
+    const [r, g, b] = hslToRgb(hue, 0.94, 0.79);
+
+    return `rgb(${r}, ${g}, ${b})`;
 }
 
 function resizeBoard(card, width, height) {
