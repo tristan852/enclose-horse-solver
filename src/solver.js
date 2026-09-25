@@ -863,7 +863,7 @@ function createPuzzleCard(puzzle) {
         width: width,
         height: height,
         budget: puzzle.budget,
-        tool: "grass",
+        tool: "water",
         brush: 1,
         map: formatBoard(puzzle, view.solution)
       };
