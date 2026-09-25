@@ -743,8 +743,8 @@ function createPuzzleCard(puzzle) {
     <button
       class="control-button open-puzzle"
       type="button"
-      aria-label="Open puzzle in editor"
-      title="Open puzzle in editor"
+      aria-label="Open in puzzle editor"
+      title="Open in puzzle editor"
     >
       <i data-lucide="external-link"></i>
     </button>
