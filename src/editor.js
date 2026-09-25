@@ -37,7 +37,9 @@ function editorMarkup() {
 
       <div class="workspace editor-workspace">
         <div class="board-wrap">
-          <div class="board editor-board" id="board" aria-label="Level grid">
+          <div class="board-container">
+            <div class="board editor-board" id="board" aria-label="Level grid">
+            </div>
           </div>
         </div>
         <p class="board-note">Click or drag across the grid to paint.</p>

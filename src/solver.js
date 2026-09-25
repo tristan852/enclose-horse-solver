@@ -832,9 +832,13 @@ function createPuzzleCard(puzzle) {
 
   resizeBoard(card, width, height);
 
+  const boardContainer = document.createElement("div");
+  boardContainer.className = "board-container";
+  boardContainer.append(board);
+  
   const boardWrap = document.createElement("div");
   boardWrap.className = "board-wrap";
-  boardWrap.append(board);
+  boardWrap.append(boardContainer);
   card.append(boardWrap);
 
   const status = document.createElement("div");

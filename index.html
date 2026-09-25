@@ -157,13 +157,17 @@
       margin-top: 18px;
     }
   
-    .board {
-      display: grid;
-      gap: calc(var(--cell) * 0.06);
-      padding: calc(var(--cell) * 0.18);
+    .board-container {
+      padding: 8px;
       background: #080a0b;
       border: 1px solid var(--line);
       border-radius: 9px;
+    }
+    
+    .board {
+      display: grid;
+      gap: calc(var(--cell) * 0.06);
+      border-radius: 3px;
       max-width: 100%;
     }
   
