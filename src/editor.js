@@ -935,14 +935,20 @@ function initEditor() {
 
   function resetSolveButton() {
     const button = document.getElementById("solve");
-    button.textContent = "◆";
+    
+    button.innerHTML = `<i data-lucide="sparkle"></i>`;
+    lucide.createIcons({ root: button });
+    
     button.title = "Solve";
     button.setAttribute("aria-label", "Solve");
   }
 
   function markSolveButtonBusy() {
     const button = document.getElementById("solve");
-    button.textContent = "×";
+    
+    button.innerHTML = `<i data-lucide="x"></i>`;
+    lucide.createIcons({ root: button });
+    
     button.title = "Cancel solve";
     button.setAttribute("aria-label", "Cancel solve");
   }
