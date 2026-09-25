@@ -786,7 +786,7 @@ function initEditor() {
   }
 
   function centerOffset(size) {
-    return Math.floor((size - 1) / 2);
+    return Math.ceil((size - 1) / 2);
   }
 
   function tileCoordinate(cellIndex, gridWidth = width) {
@@ -1470,13 +1470,14 @@ function initEditor() {
     };
 
     const center = index(centerOffset(width), centerOffset(height));
-    const horse = chooseGrass();
-    cells[horse >= 0 ? horse : center] = "horse";
 
     if (mode.value === "lovebirds" || mode.value === "lovers-quarrel") {
       const unicorn = chooseGrass();
       cells[unicorn >= 0 ? unicorn : center] = "unicorn";
     }
+    
+    const horse = chooseGrass();
+    cells[horse >= 0 ? horse : center] = "horse";
 
     ensureAnimals(animalPositions());
   }
