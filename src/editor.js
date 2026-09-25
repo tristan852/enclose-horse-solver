@@ -1219,17 +1219,9 @@ function initEditor() {
       });
     } else {
       uniqueTargets.forEach(target => {
+        
         const targetType = cells[target];
-        const animalTarget = ["horse", "unicorn"].includes(targetType);
-
-        if (type === "water" && animalTarget && !cells.includes("grass")) {
-          return;
-        }
-
-        if (
-          !(type === "water" && animalTarget) &&
-          !canReplace(targetType, type)
-        ) return;
+        if (!canReplace(targetType, type)) return;
 
         if (type !== "grass" && type !== "water" && targetType === "water") {
           return;
