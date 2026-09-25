@@ -1423,8 +1423,8 @@ function initEditor() {
   });
 
   function generateRandomLevel() {
-    const pondMinProbability = 0.02;
-    const pondMaxProbability = 0.04;
+    const pondMinProbability = 0.05;
+    const pondMaxProbability = 0.1;
     const branchProbability = 0.25;
     const minPondSize = 1;
     const maxPondSize = 15;
