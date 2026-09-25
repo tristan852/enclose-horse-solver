@@ -1119,12 +1119,16 @@ async function main() {
   const view1 = showPuzzle(puzzle);
   const view2 = bonusPuzzle === null ? null : showPuzzle(bonusPuzzle);
 
-  try {
-    await initiallySolvePuzzle(puzzle, view1, staticModel);
+  lucide.createIcons();
 
+  try {
+    
+    await initiallySolvePuzzle(puzzle, view1, staticModel);
+    
     if (bonusPuzzle !== null) {
       await initiallySolvePuzzle(bonusPuzzle, view2, staticModel);
     }
+    
   } catch (error) {
     results.hidden = false;
     results.innerHTML =
