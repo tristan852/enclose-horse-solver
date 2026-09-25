@@ -1276,11 +1276,7 @@ function initEditor() {
         return old[index(coordinateX + oldCenterX, coordinateY + oldCenterY, oldWidth)];
       }
 
-      const closestX = clamp(coordinateX, oldMinX, oldMaxX);
-      const closestY = clamp(coordinateY, oldMinY, oldMaxY);
-      const oldTile = old[index(closestX + oldCenterX, closestY + oldCenterY, oldWidth)];
-
-      return oldTile === "water" ? "water" : "grass";
+      return "grass";
     });
 
     ensureAnimals(anchors);
