@@ -834,12 +834,12 @@ function createPuzzleCard(puzzle) {
     <div class="controls">
       <button type="button" disabled
         aria-label="Previous optimal solution">
-        ← Previous
+        <i data-lucide="arrow-left"></i> Previous
       </button>
 
       <button type="button" disabled
         aria-label="Next optimal solution">
-        Next →
+        Next <i data-lucide="arrow-right"></i>
       </button>
     </div>
   `;
