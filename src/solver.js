@@ -641,7 +641,7 @@ export function waterGetsWave(x, y, width) {
     const w = Math.sin(24690 + index * 67890) * 1e4;
     const v = w - Math.floor(w);
 
-    return v < 0.7;
+    return v < 0.06;
 }
 
 function resizeBoard(card, width, height) {
