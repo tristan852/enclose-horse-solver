@@ -1,4 +1,4 @@
-import { PuzzleSolver, cancelSolver, parsePuzzle } from "./solver.js";
+import { PuzzleSolver, cancelSolver, parsePuzzle, portalColor } from "./solver.js";
 
 const TILE_CHARS = {
   grass: ".",
@@ -269,12 +269,6 @@ function initEditor() {
   const portalAge = new Map();
   const portalPlaceholders = new Map();
   const portalTypes = PORTALS;
-  const portalColors = Object.fromEntries(
-    portalTypes.map((key, index) => [
-      key,
-      `hsl(${(index * 37 + 258) % 360} 42% ${38 + (index % 3) * 5}%)`
-    ])
-  );
 
   const clamp = (value, min, max) => Math.max(min, Math.min(max, value));
   const index = (x, y, gridWidth = width) => y * gridWidth + x;
@@ -645,10 +639,10 @@ function initEditor() {
       ? `Portal ${placeholderKey} placeholder`
       : tileTitle(type);
     cell.textContent = key ? "🌀" : "";
-    cell.style.backgroundColor = key ? portalColors[key] : "";
+    cell.style.backgroundColor = key ? portalColor(key) : "";
 
     if (placeholderKey) {
-      cell.style.setProperty("--portal-color", portalColors[placeholderKey]);
+      cell.style.setProperty("--portal-color", portalColor(placeholderKey));
     }
 
     if (type === "water") {
@@ -1340,7 +1334,7 @@ function initEditor() {
     choice.textContent = key;
     choice.title = `Portal ${key}`;
     choice.setAttribute("aria-label", `Portal ${key}`);
-    choice.style.backgroundColor = portalColors[key];
+    choice.style.backgroundColor = portalColor(key);
     choice.dataset.portal = key;
     choice.addEventListener("click", () => setActiveTool(`portal-${key}`));
     document.getElementById("portal-palette").appendChild(choice);
