@@ -1423,8 +1423,12 @@ function initEditor() {
   });
 
   function generateRandomLevel() {
-    cells = Array.from({ length: width * height }, () => "grass");
-    const probability = 0.002 + Math.random() * 0.018;
+    const pondMinProbability = 0.002;
+    const pondMaxProbability = 0.02;
+    const branchProbability = 0.25;
+  
+    cells = Array.from({ length: width * height }, () => "water");
+    const probability = pondMinProbability + Math.random() * (pondMaxProbability - pondMinProbability);
     const directions = [[1, 0], [-1, 0], [0, 1], [0, -1]];
 
     for (let start = 0; start < cells.length; start++) {
@@ -1444,7 +1448,7 @@ function initEditor() {
         x = clamp(x + dx, 0, width - 1);
         y = clamp(y + dy, 0, height - 1);
 
-        if (Math.random() < 0.24) {
+        if (Math.random() < branchProbability) {
           const [branchX, branchY] =
             directions[Math.floor(Math.random() * directions.length)];
           cells[index(
