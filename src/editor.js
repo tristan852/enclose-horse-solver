@@ -244,7 +244,7 @@ function initEditor() {
   let width = 12;
   let height = 12;
   let brushSize = 1;
-  let activeTool = "grass";
+  let activeTool = "water";
   let cells = [];
   let history = [];
   let future = [];
@@ -359,7 +359,7 @@ function initEditor() {
       width === 12 &&
       height === 12 &&
       Number(budgetInput.value) === 12 &&
-      activeTool === "grass" &&
+      activeTool === "water" &&
       brushSize === 1 &&
       encodeMap() === defaultMap()
     );
@@ -416,7 +416,7 @@ function initEditor() {
     }
 
     brushSize = clamp(Number(session?.brush) || 1, 1, 4);
-    activeTool = session?.tool || "grass";
+    activeTool = session?.tool || "water";
     if (activeTool === "portal") activeTool = "portal-0";
 
     const rows = (session?.map || "").split("\n");

@@ -414,7 +414,7 @@
       }
     }
 
-    selectTool("Grass (G)");
+    selectTool("Water (T)");
   } catch (error) {
     console.error(error);
     alert(
