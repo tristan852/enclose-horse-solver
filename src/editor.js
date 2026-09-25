@@ -1426,8 +1426,11 @@ function initEditor() {
     const pondMinProbability = 0.002;
     const pondMaxProbability = 0.02;
     const branchProbability = 0.25;
+    const minPondSize = 2;
+    const maxPondSize = 16;
+    const pondSizeTemperature = 0.7;
   
-    cells = Array.from({ length: width * height }, () => "water");
+    cells = Array.from({ length: width * height }, () => "grass");
     const probability = pondMinProbability + Math.random() * (pondMaxProbability - pondMinProbability);
     const directions = [[1, 0], [-1, 0], [0, 1], [0, -1]];
 
@@ -1436,10 +1439,8 @@ function initEditor() {
 
       let x = start % width;
       let y = Math.floor(start / width);
-      const steps =
-        2 + Math.floor(
-          Math.pow(Math.random(), 0.72) * Math.max(4, Math.min(width, height) * 1.8)
-        );
+      
+      const steps = minPondSize + Math.floor(Math.pow(Math.random(), pondSizeTemperature) * (maxPondSize - minPondSize + 1));
 
       for (let step = 0; step < steps; step++) {
         cells[index(x, y)] = "water";
