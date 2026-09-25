@@ -1461,8 +1461,20 @@ function initEditor() {
     }
 
     const grassTiles = () =>
-      cells.map((tile, cellIndex) => tile === "grass" ? cellIndex : -1)
-        .filter(cellIndex => cellIndex >= 0);
+      cells.map((tile, cellIndex) => {
+        const x = cellIndex % width;
+        const y = Math.floor(cellIndex / width);
+    
+        const insideMap =
+          x >= 2 &&
+          x < width - 2 &&
+          y >= 2 &&
+          y < height - 2;
+    
+        return tile === "grass" && insideMap ? cellIndex : -1;
+      })
+      .filter(cellIndex => cellIndex >= 0);
+    
     const chooseGrass = () => {
       const available = grassTiles();
       return available.length
