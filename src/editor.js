@@ -42,7 +42,7 @@ function editorMarkup() {
             </div>
           </div>
         </div>
-        <p class="board-note">Click or drag across the grid to paint.</p>
+        <p class="board-note">Click or drag across the map.</p>
 
         <div class="toolbar" aria-label="Editor toolbar">
           <div class="toolbar-top">
