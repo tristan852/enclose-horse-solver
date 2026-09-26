@@ -1882,16 +1882,20 @@ function initEditor() {
   saveUrl();
   
   lucide.createIcons();
-}
-
-export function main() {
-  initEditor();
   
   const isPlay = window.location.pathname
     .replace(/\/$/, "")
     .endsWith("/play");
   
+  if(isPlay) {
   
+    playModeButton.hidden = true;
+    togglePlayMode();
+  }
+}
+
+export function main() {
+  initEditor();
 }
 
 main();
