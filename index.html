@@ -673,23 +673,22 @@
     }
   
     .brush-grid {
-      display: grid;
-      grid-template-columns: repeat(var(--brush), 5px);
-      grid-auto-rows: 5px;
-      gap: 2px;
+      display: inline-flex;
+      flex-direction: column;
       padding: 2px;
     }
   
-    .brush-grid i {
+    .brush-grid div i {
       display: block;
       width: 5px;
       height: 5px;
+      margin: 1px;
       border: 1px solid #cbd2d6;
       background: #59636b;
       border-radius: 1px;
     }
   
-    .tool.active .brush-grid i {
+    .tool.active .brush-grid div i {
       border-color: #f2d59c;
       background: #b8893f;
     }
