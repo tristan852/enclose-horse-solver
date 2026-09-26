@@ -13,14 +13,16 @@ function bookmarkletPlugin() {
     name: "bookmarklet-source-files",
 
     async transformIndexHtml(html) {
-      const [bookmarklet, bookmarklet2] = await Promise.all([
+      const [bookmarklet, bookmarklet2, bookmarklet3] = await Promise.all([
         buildBookmarklet("bookmarklets/solve.js"),
         buildBookmarklet("bookmarklets/editor.js"),
+        buildBookmarklet("bookmarklets/daily.js"),
       ]);
 
       return html
         .replace("__BOOKMARKLET__", JSON.stringify(bookmarklet))
-        .replace("__BOOKMARKLET2__", JSON.stringify(bookmarklet2));
+        .replace("__BOOKMARKLET2__", JSON.stringify(bookmarklet2))
+        .replace("__BOOKMARKLET3__", JSON.stringify(bookmarklet3));
     },
   };
 }
