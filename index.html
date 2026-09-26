@@ -122,7 +122,7 @@
       border-color: #59636b !important;
     }
   
-    #editor-bookmark {
+    #editor-bookmark, #daily-bookmark {
       margin-top: 26px;
     }
   
@@ -870,10 +870,12 @@
   <script>
     const bookmarklet = __BOOKMARKLET__;
     const bookmarklet2 = __BOOKMARKLET2__;
+    const bookmarklet3 = __BOOKMARKLET3__;
     
     document.addEventListener("DOMContentLoaded", function() {
       document.getElementById("bookmark").href = bookmarklet;
       document.getElementById("editor-bookmark").href = bookmarklet2;
+      document.getElementById("daily-bookmark").href = bookmarklet3;
     });
   </script>
   
@@ -922,6 +924,13 @@
     </a>
     <small>
       Use while in a level or level editor to paste a copied solution or level.
+    </small>
+
+    <a id="daily-bookmark" href="#" draggable="true">
+      ◈ Open next daily level
+    </a>
+    <small>
+      Use on enclose.horse to open the next daily puzzle early, before it releases at midnight in your timezone.
     </small>
   </section>
 
