@@ -38,7 +38,10 @@ export default defineConfig({
       name: "copy-index-for-edit",
       async writeBundle() {
         await fs.mkdir("dist/edit", { recursive: true });
+        await fs.mkdir("dist/play", { recursive: true });
+        
         await fs.copyFile("dist/index.html", "dist/edit/index.html");
+        await fs.copyFile("dist/index.html", "dist/play/index.html");
       },
     },
   ],
