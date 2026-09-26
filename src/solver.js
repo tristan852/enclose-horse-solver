@@ -753,7 +753,7 @@ function createPuzzleCard(puzzle) {
 
   const title = isBonus
     ? `Bonus round: ${bonusName(puzzle.type)}`
-    : puzzle.name || "Enclose.horse level";
+    : puzzle.name || "Enclose.horse puzzle";
 
   card.innerHTML = `
     <h2>${title}</h2>

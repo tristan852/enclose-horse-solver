@@ -19,10 +19,10 @@ const PORTALS = "0123456789abcdefghijklmnopqrstuvwxyz".split("");
 
 function editorMarkup() {
   return `
-    <section class="editor" aria-label="Level editor">
+    <section class="editor" aria-label="Puzzle editor">
       <div class="editor-head">
         <div>
-          <h2>Level editor</h2>
+          <h2>Puzzle editor</h2>
           <p class="subtitle">Create a puzzle for the herd.</p>
         </div>
         <button
@@ -38,7 +38,7 @@ function editorMarkup() {
       <div class="workspace editor-workspace">
         <div class="board-wrap">
           <div class="board-container">
-            <div class="board editor-board" id="board" aria-label="Level grid">
+            <div class="board editor-board" id="board" aria-label="Puzzle map">
             </div>
           </div>
         </div>
@@ -194,7 +194,7 @@ function editorMarkup() {
               <button class="secondary-btn icon-tool danger" id="clear-all" aria-label="Clear all" title="Clear all">
                 <i data-lucide="trash"></i>
               </button>
-              <button class="secondary-btn icon-tool" id="random" aria-label="Random level" title="Random level">
+              <button class="secondary-btn icon-tool" id="random" aria-label="Random puzzle" title="Random puzzle">
                 <i data-lucide="dices"></i>
               </button>
               <button class="secondary-btn icon-tool" id="solve" aria-label="Solve" title="Solve">
@@ -211,7 +211,7 @@ function editorMarkup() {
             </div>
           </div>
           <button class="primary-btn" id="play">
-            <span class="play-icon">▶</span> Play level
+            <span class="play-icon">▶</span> Play puzzle
           </button>
         </div>
       </div>
@@ -1026,7 +1026,7 @@ function initEditor() {
         updateStatus("No legal solution found");
       }
     } catch (error) {
-      if (!request.cancelled) updateStatus(error.name === "AbortError" ? "Solve cancelled" : "Could not solve level");
+      if (!request.cancelled) updateStatus(error.name === "AbortError" ? "Solve cancelled" : "Could not solve puzzle");
     } finally {
       if (solveRequest === request) {
         solveRequest = null;
@@ -1420,7 +1420,7 @@ function initEditor() {
   document.getElementById("clear-all").addEventListener("click", () => {
     invalidateSolutions();
     const before = snapshot();
-    beginAction("clear level");
+    beginAction("clear puzzle");
     
     portalPlaceholders.clear();
     cells = Array.from({ length: width * height }, () => "grass");
@@ -1543,12 +1543,12 @@ function initEditor() {
   document.getElementById("random").addEventListener("click", () => {
     invalidateSolutions();
     const before = snapshot();
-    beginAction("random level");
+    beginAction("random puzzle");
     portalPlaceholders.clear();
     generateRandomLevel();
     render(changedIndices(before));
     finishAction();
-    updateStatus("Random level generated");
+    updateStatus("Random puzzle generated");
     setTimeout(updateStatus, 1300);
   });
 
@@ -1608,8 +1608,8 @@ function initEditor() {
     playMode = !playMode;
     document.querySelector(".toolbar").hidden = playMode;
     event.currentTarget.innerHTML = playMode
-      ? '<span class="play-icon">✎</span> Edit level'
-      : '<span class="play-icon">▶</span> Play level';
+      ? '<span class="play-icon">✎</span> Edit puzzle'
+      : '<span class="play-icon">▶</span> Play puzzle';
 
     if (playMode) {
       brushSize = 1;
