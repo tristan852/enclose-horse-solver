@@ -673,24 +673,18 @@
     }
   
     .brush-grid {
-      display: inline-flex;
-      flex-direction: column;
-      padding: 2px;
+      width: 24px;
+      height: 24px;
+      stroke: #cbd2d6;
+      fill: #59636b;
+      stroke-width: 1.8;
+      stroke-linecap: round;
+      stroke-linejoin: round;
     }
   
-    .brush-grid div i {
-      display: block;
-      width: 5px;
-      height: 5px;
-      margin: 1px;
-      border: 1px solid #cbd2d6;
-      background: #59636b;
-      border-radius: 1px;
-    }
-  
-    .tool.active .brush-grid div i {
-      border-color: #f2d59c;
-      background: #b8893f;
+    .tool.active .brush-grid {
+      stroke: #f2d59c;
+      fill: #b8893f;
     }
   
     .portal-palette {
