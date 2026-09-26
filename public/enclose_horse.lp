@@ -30,20 +30,6 @@
 % The wall budget is an upper bound.
 :- budget(B), B < #count { X,Y : wall(X,Y) }.
 
-% Some puzzle data includes a previously known optimum. When supplied, the
-% generated instance facts contain optimal_score/1 and the objective is fixed
-% to that exact value. Without the fact, Clingo remains free to optimize it.
-objective_score(S) :-
-    optimal_score(_),
-    S = #sum {
-        Score,X,Y : covered(X,Y), tile_score(X,Y,Score);
-        costly_wall_score,X,Y : mode(costly_walls), wall(X,Y)
-    }.
-
-:- optimal_score(Expected),
-   objective_score(Actual),
-   Actual != Expected.
-
 % ------------------------------------------------------------------------------
 % Reachability with the selected walls
 % ------------------------------------------------------------------------------

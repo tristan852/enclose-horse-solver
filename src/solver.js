@@ -274,10 +274,6 @@ function generateFacts(puzzle) {
     fact("budget", puzzle.wallBudget),
   ];
 
-  if (puzzle.optimalScore != null) {
-    facts.push(fact("optimal_score", puzzle.optimalScore));
-  }
-
   const horseStaticReachability =
     calculateStaticReachability(puzzle, TILE.HORSE);
   const unicornStaticReachability =
