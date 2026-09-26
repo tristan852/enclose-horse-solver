@@ -6,8 +6,6 @@
     return;
   }
 
-  window.open(
-    "https://enclose.horse/play/" + encodeURIComponent(level.id),
-    "_blank"
-  );
+  location.href =
+    "https://enclose.horse/play/" + encodeURIComponent(level.id);
 })();
