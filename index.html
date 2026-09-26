@@ -176,11 +176,35 @@
     .cell {
       width: var(--cell);
       height: var(--cell);
+      position: relative;
       display: grid;
       place-items: center;
       font-size: calc(var(--cell) * 0.52);
       background: #47783b;
-      box-shadow: 1px 0 rgba(0, 0, 0, 0.08), 0 1px rgba(0, 0, 0, 0.08);
+    }
+    
+    .cell::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      z-index: 100;
+      pointer-events: none;
+    
+      background:
+        repeating-linear-gradient(
+          to right,
+          transparent 0,
+          transparent calc(var(--cell) - 1px),
+          rgba(0, 0, 0, 0.08) calc(var(--cell) - 1px),
+          rgba(0, 0, 0, 0.08) var(--cell)
+        ),
+        repeating-linear-gradient(
+          to bottom,
+          transparent 0,
+          transparent calc(var(--cell) - 1px),
+          rgba(0, 0, 0, 0.08) calc(var(--cell) - 1px),
+          rgba(0, 0, 0, 0.08) var(--cell)
+        );
     }
   
     .cell:nth-child(odd) {
