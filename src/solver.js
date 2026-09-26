@@ -642,7 +642,7 @@ export function waterGetsWave(x, y, width) {
     const v = w - Math.floor(w);
 
     const period = 8;
-    const m = Math.floor(v * period);
+    const m = (Math.floor(v * period) + x) % period;
 
     return m <= 1;
 }
