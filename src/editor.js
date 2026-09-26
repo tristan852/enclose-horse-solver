@@ -1846,13 +1846,13 @@ function initEditor() {
       console.error("Failed to copy puzzle:", err);
     }
   });
+  
+  const playModeButton = document.getElementById("play");
 
-  document.getElementById("play").addEventListener("click", event => {
+  function togglePlayMode() {
     playMode = !playMode;
     document.querySelector(".toolbar").hidden = playMode;
-    event.currentTarget.innerHTML = playMode
-      ? '<span class="play-icon">✎</span> Edit puzzle'
-      : '<span class="play-icon">▶</span> Play puzzle';
+    playModeButton.innerHTML = playMode ? '<span class="play-icon">✎</span> Edit puzzle' : '<span class="play-icon">▶</span> Play puzzle';
 
     if (playMode) {
       brushSize = 1;
@@ -1863,6 +1863,10 @@ function initEditor() {
     }
 
     updateStatus(playMode ? "Play mode preview ready" : "Edit mode");
+  }
+
+  playModeButton.addEventListener("click", event => {
+    togglePlayMode();
   });
 
   window.addEventListener("resize", fitBoard, { passive: true });
@@ -1882,6 +1886,12 @@ function initEditor() {
 
 export function main() {
   initEditor();
+  
+  const isPlay = window.location.pathname
+    .replace(/\/$/, "")
+    .endsWith("/play");
+  
+  
 }
 
 main();
