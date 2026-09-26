@@ -637,11 +637,14 @@ export function waterGetsBoat(x, y, width) {
 }
 
 export function waterGetsWave(x, y, width) {
-    const index = y * width + x;
+    const index = y * width;
     const w = Math.sin(24690 + index * 67890) * 1e4;
     const v = w - Math.floor(w);
 
-    return v < 0.12;
+    const period = 8;
+    const m = Math.floor(v * period);
+
+    return m <= 1;
 }
 
 function resizeBoard(card, width, height) {
