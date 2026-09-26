@@ -119,6 +119,9 @@
       background: #30383e !important;
       color: var(--text) !important;
       border-color: #59636b !important;
+    }
+    
+    .editor-link-container {
       padding-top: 12px;
     }
     
@@ -968,9 +971,11 @@
       Create, edit, solve, and share an enclose.horse puzzle.
     </p>
 
-    <a class="editor-link" href="%BASE_URL%edit/">
-      Open the puzzle editor
-    </a>
+    <div class="editor-link-container">
+      <a class="editor-link" href="%BASE_URL%edit/">
+        Open the puzzle editor
+      </a>
+    </div>
   </section>
 
   <section id="results" hidden></section>
