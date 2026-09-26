@@ -99,79 +99,79 @@ function editorMarkup() {
               <span class="tool-label">Brush</span>
               <button class="tool brush active" data-size="1" aria-label="1 by 1 brush" title="1×1 brush">
                 <span class="brush-grid" style="--brush:1">
-      <i>
-      </i>
-      </span>
+                  <i>
+                  </i>
+                </span>
               </button>
               <button class="tool brush" data-size="2" aria-label="2 by 2 brush" title="2×2 brush">
                 <span class="brush-grid" style="--brush:2">
-      <i>
-      </i>
-      <i>
-      </i>
-      <i>
-      </i>
-      <i>
-      </i>
-      </span>
+                  <i>
+                  </i>
+                  <i>
+                  </i>
+                  <i>
+                  </i>
+                  <i>
+                  </i>
+                </span>
               </button>
               <button class="tool brush" data-size="3" aria-label="3 by 3 brush" title="3×3 brush">
                 <span class="brush-grid" style="--brush:3">
-      <i>
-      </i>
-      <i>
-      </i>
-      <i>
-      </i>
-      <i>
-      </i>
-      <i>
-      </i>
-      <i>
-      </i>
-      <i>
-      </i>
-      <i>
-      </i>
-      <i>
-      </i>
-      </span>
+                  <i>
+                  </i>
+                  <i>
+                  </i>
+                  <i>
+                  </i>
+                  <i>
+                  </i>
+                  <i>
+                  </i>
+                  <i>
+                  </i>
+                  <i>
+                  </i>
+                  <i>
+                  </i>
+                  <i>
+                  </i>
+                </span>
               </button>
               <button class="tool brush" data-size="4" aria-label="4 by 4 brush" title="4×4 brush">
                 <span class="brush-grid" style="--brush:4">
-      <i>
-      </i>
-      <i>
-      </i>
-      <i>
-      </i>
-      <i>
-      </i>
-      <i>
-      </i>
-      <i>
-      </i>
-      <i>
-      </i>
-      <i>
-      </i>
-      <i>
-      </i>
-      <i>
-      </i>
-      <i>
-      </i>
-      <i>
-      </i>
-      <i>
-      </i>
-      <i>
-      </i>
-      <i>
-      </i>
-      <i>
-      </i>
-      </span>
+                  <i>
+                  </i>
+                  <i>
+                  </i>
+                  <i>
+                  </i>
+                  <i>
+                  </i>
+                  <i>
+                  </i>
+                  <i>
+                  </i>
+                  <i>
+                  </i>
+                  <i>
+                  </i>
+                  <i>
+                  </i>
+                  <i>
+                  </i>
+                  <i>
+                  </i>
+                  <i>
+                  </i>
+                  <i>
+                  </i>
+                  <i>
+                  </i>
+                  <i>
+                  </i>
+                  <i>
+                  </i>
+                </span>
               </button>
             </div>
           </div>
