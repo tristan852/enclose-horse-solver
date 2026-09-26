@@ -22,8 +22,8 @@ function editorMarkup() {
     <section class="editor" aria-label="Puzzle editor">
       <div class="editor-head">
         <div>
-          <h2>Puzzle editor</h2>
-          <p class="subtitle">Create a puzzle for the herd.</p>
+          <h2 id="editor-title">Puzzle editor</h2>
+          <p id="editor-subtitle" class="subtitle">Create a puzzle for the herd.</p>
         </div>
         <button
           class="control-button"
@@ -1891,6 +1891,12 @@ function initEditor() {
   
     playModeButton.hidden = true;
     togglePlayMode();
+    
+    const title = document.getElementById("editor-title");
+    const subtitle = document.getElementById("editor-subtitle");
+    
+    title.textContent = "Enclose the horse!";
+    subtitle.textContent = `Game mode: ${mode.value}´;
   }
 }
 
