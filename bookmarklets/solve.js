@@ -2,7 +2,7 @@
   var level = window.__LEVEL__;
 
   if (!level) {
-    alert("Open an enclose.horse puzzle first.");
+    alert("Open an enclose.horse level first.");
     return;
   }
 
@@ -71,7 +71,7 @@
           windowHandle.close();
         }
 
-        alert("Could not prepare this puzzle: " + error.message);
+        alert("Could not prepare this level: " + error.message);
       });
   } else {
     done(null);
