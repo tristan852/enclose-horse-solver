@@ -121,9 +121,27 @@
       color: var(--text) !important;
       border-color: #59636b !important;
     }
-  
-    #editor-bookmark, #daily-bookmark {
-      margin-top: 26px;
+    
+    .bookmark-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 1.5rem;
+    }
+    
+    .bookmark {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+    
+    .bookmark small {
+      display: block;
+    }
+    
+    @media (max-width: 600px) {
+      .bookmark-grid {
+        grid-template-columns: 1fr;
+      }
     }
   
     .level {
