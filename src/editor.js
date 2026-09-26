@@ -1896,7 +1896,7 @@ function initEditor() {
     const subtitle = document.getElementById("editor-subtitle");
     
     title.textContent = "Enclose the horse!";
-    subtitle.textContent = `Game mode: ${mode.value}´;
+    subtitle.textContent = `Game mode: ${mode.value}`;
   }
 }
 
