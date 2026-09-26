@@ -98,30 +98,55 @@ function editorMarkup() {
             <div class="tool-group">
               <span class="tool-label">Brush</span>
               <button class="tool brush active" data-size="1" aria-label="1 by 1 brush" title="1×1 brush">
-                <span class="brush-grid">
-                  <div><i></i></div>
-                </span>
+                <svg xmlns="http://www.w3.org/2000/svg" width="44" height="44" viewBox="0 0 44 44" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="brush-grid">
+                  <rect width="7" height="7" x="18.5" y="18.5" rx="1"/>
+                </svg>
               </button>
               <button class="tool brush" data-size="2" aria-label="2 by 2 brush" title="2×2 brush">
-                <span class="brush-grid">
-                  <div><i></i><i></i></div>
-                  <div><i></i><i></i></div>
-                </span>
+                <svg xmlns="http://www.w3.org/2000/svg" width="44" height="44" viewBox="0 0 44 44" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="brush-grid">
+                  <rect width="7" height="7" x="13" y="13" rx="1"/>
+                  <rect width="7" height="7" x="24" y="13" rx="1"/>
+                  <rect width="7" height="7" x="24" y="24" rx="1"/>
+                  <rect width="7" height="7" x="13" y="24" rx="1"/>
+                </svg>
               </button>
               <button class="tool brush" data-size="3" aria-label="3 by 3 brush" title="3×3 brush">
-                <span class="brush-grid">
-                  <div><i></i><i></i><i></i></div>
-                  <div><i></i><i></i><i></i></div>
-                  <div><i></i><i></i><i></i></div>
-                </span>
+                <svg xmlns="http://www.w3.org/2000/svg" width="44" height="44" viewBox="0 0 44 44" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="brush-grid">
+                  <rect width="7" height="7" x="7.5" y="7.5" rx="1"/>
+                  <rect width="7" height="7" x="18.5" y="7.5" rx="1"/>
+                  <rect width="7" height="7" x="29.5" y="7.5" rx="1"/>
+                
+                  <rect width="7" height="7" x="7.5" y="18.5" rx="1"/>
+                  <rect width="7" height="7" x="18.5" y="18.5" rx="1"/>
+                  <rect width="7" height="7" x="29.5" y="18.5" rx="1"/>
+                
+                  <rect width="7" height="7" x="7.5" y="29.5" rx="1"/>
+                  <rect width="7" height="7" x="18.5" y="29.5" rx="1"/>
+                  <rect width="7" height="7" x="29.5" y="29.5" rx="1"/>
+                </svg>
               </button>
               <button class="tool brush" data-size="4" aria-label="4 by 4 brush" title="4×4 brush">
-                <span class="brush-grid">
-                  <div><i></i><i></i><i></i><i></i></div>
-                  <div><i></i><i></i><i></i><i></i></div>
-                  <div><i></i><i></i><i></i><i></i></div>
-                  <div><i></i><i></i><i></i><i></i></div>
-                </span>
+                <svg xmlns="http://www.w3.org/2000/svg" width="44" height="44" viewBox="0 0 44 44" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="brush-grid">
+                  <rect width="7" height="7" x="2" y="2" rx="1"/>
+                  <rect width="7" height="7" x="13" y="2" rx="1"/>
+                  <rect width="7" height="7" x="24" y="2" rx="1"/>
+                  <rect width="7" height="7" x="35" y="2" rx="1"/>
+                
+                  <rect width="7" height="7" x="2" y="13" rx="1"/>
+                  <rect width="7" height="7" x="13" y="13" rx="1"/>
+                  <rect width="7" height="7" x="24" y="13" rx="1"/>
+                  <rect width="7" height="7" x="35" y="13" rx="1"/>
+                
+                  <rect width="7" height="7" x="2" y="24" rx="1"/>
+                  <rect width="7" height="7" x="13" y="24" rx="1"/>
+                  <rect width="7" height="7" x="24" y="24" rx="1"/>
+                  <rect width="7" height="7" x="35" y="24" rx="1"/>
+                
+                  <rect width="7" height="7" x="2" y="35" rx="1"/>
+                  <rect width="7" height="7" x="13" y="35" rx="1"/>
+                  <rect width="7" height="7" x="24" y="35" rx="1"/>
+                  <rect width="7" height="7" x="35" y="35" rx="1"/>
+                </svg>
               </button>
             </div>
           </div>
