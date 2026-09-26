@@ -1416,102 +1416,327 @@ function initEditor() {
   });
 
   function generateRandomLevel() {
-    const pondMinProbability = 0.05;
-    const pondMaxProbability = 0.2;
-    const branchProbability = 0.5;
-    const minPondSize = 1;
-    const maxPondSize = 5;
-    const minPondSizeTemperature = 0.1;
-    const maxPondSizeTemperature = 0.5;
-    const minPondDistance = 5;
-    
-    const sparseness = Math.random();
-    const pondSizeTemperature = minPondSizeTemperature + sparseness * (maxPondSizeTemperature - minPondSizeTemperature);
-    
     cells = Array.from({ length: width * height }, () => "grass");
-    const probability = pondMinProbability + sparseness * (pondMaxProbability - pondMinProbability);
-    const directions = [[1, 0], [-1, 0], [0, 1], [0, -1]];
-
-    const seedAmount = Math.round(width * height * probability);
-    const seedDistance = minPondDistance * (1.0 - sparseness);
-    const seeds = [];
-    
-    for (let i = 0; i < seedAmount; i++) {
-      const x = Math.floor(Math.random() * width);
-      const y = Math.floor(Math.random() * height);
-    
-      // Check distance to all existing seeds
-      const valid = seeds.every(([sx, sy]) => {
-        const dx = x - sx;
-        const dy = y - sy;
-        return dx * dx + dy * dy >= seedDistance * seedDistance;
-      });
-    
-      if (valid) {
-        seeds.push([x, y]);
-      }
+  
+    // ------------------------------------------------------------
+    // Animal positions
+    // ------------------------------------------------------------
+  
+    const marginX = Math.max(1, Math.floor(width / 4));
+    const marginY = Math.max(1, Math.floor(height / 4));
+  
+    // Original horse placement.
+    const horseX =
+      marginX +
+      Math.floor(
+        Math.random() * Math.max(1, width - marginX * 2)
+      );
+  
+    const horseY =
+      marginY +
+      Math.floor(
+        Math.random() * Math.max(1, height - marginY * 2)
+      );
+  
+    const horseIndex = index(horseX, horseY);
+  
+    // Unicorn is placed immediately afterward, while the entire
+    // map is still grass. It uses exactly the same central-region
+    // placement logic as the original horse.
+    let unicornX = null;
+    let unicornY = null;
+    let unicornIndex = null;
+  
+    if (
+      mode.value === "lovebirds" ||
+      mode.value === "lovers-quarrel"
+    ) {
+      do {
+        unicornX =
+          marginX +
+          Math.floor(
+            Math.random() * Math.max(1, width - marginX * 2)
+          );
+  
+        unicornY =
+          marginY +
+          Math.floor(
+            Math.random() * Math.max(1, height - marginY * 2)
+          );
+  
+        unicornIndex = index(unicornX, unicornY);
+      } while (unicornIndex === horseIndex);
     }
-
-    for (const [x0, y0] of seeds) {
-      
-      let x = x0;
-      let y = y0;
-      
-      const steps = minPondSize + Math.floor(Math.pow(Math.random(), pondSizeTemperature) * (maxPondSize - minPondSize + 1));
-
-      for (let step = 0; step < steps; step++) {
-        cells[index(x, y)] = "water";
-        const [dx, dy] = directions[Math.floor(Math.random() * directions.length)];
-
-        x = clamp(x + dx, 0, width - 1);
-        y = clamp(y + dy, 0, height - 1);
-
-        if (Math.random() < branchProbability) {
-          const [branchX, branchY] =
-            directions[Math.floor(Math.random() * directions.length)];
-          cells[index(
-            clamp(x + branchX, 0, width - 1),
-            clamp(y + branchY, 0, height - 1)
-          )] = "water";
+  
+    // ------------------------------------------------------------
+    // Terrain helpers
+    // ------------------------------------------------------------
+  
+    const terrainExists = (x, y) => {
+      return (
+        x >= 0 &&
+        x < width &&
+        y >= 0 &&
+        y < height &&
+        cells[index(x, y)] === "water"
+      );
+    };
+  
+    const nearTerrain = (x, y) => {
+      for (let dy = -1; dy <= 1; dy++) {
+        for (let dx = -1; dx <= 1; dx++) {
+          if (terrainExists(x + dx, y + dy)) {
+            return true;
+          }
         }
       }
-    }
-
-    const grassTiles = () =>
-      cells.map((tile, cellIndex) => {
-        const x = cellIndex % width;
-        const y = Math.floor(cellIndex / width);
-    
-        const insideMap =
-          x >= 2 &&
-          x < width - 2 &&
-          y >= 2 &&
-          y < height - 2;
-    
-        return tile === "grass" && insideMap ? cellIndex : -1;
-      })
-      .filter(cellIndex => cellIndex >= 0);
-    
-    const chooseGrass = () => {
-      const available = grassTiles();
-      return available.length
-        ? available[Math.floor(Math.random() * available.length)]
-        : -1;
+  
+      return false;
     };
-
-    let center = index(centerOffset(width), centerOffset(height));
-
-    const horse = chooseGrass();
-    cells[horse >= 0 ? horse : center] = "horse";
-    
-    if (mode.value === "lovebirds" || mode.value === "lovers-quarrel") {
-      
-      if(cells[center] === "horse") center = index(centerOffset(width), centerOffset(height) - 1);
-    
-      const unicorn = chooseGrass();
-      cells[unicorn >= 0 ? unicorn : center] = "unicorn";
+  
+    // ------------------------------------------------------------
+    // Random terrain size
+    // ------------------------------------------------------------
+  
+    const randomTerrainSize = () => {
+      const r = Math.random();
+  
+      if (r < 0.15) {
+        return 1;
+      }
+  
+      if (r < 0.30) {
+        return 2 + Math.floor(Math.random() * 2);
+      }
+  
+      if (r < 0.45) {
+        return 4 + Math.floor(Math.random() * 3);
+      }
+  
+      if (r < 0.75) {
+        return 8 + Math.floor(Math.random() * 4);
+      }
+  
+      return 12 + Math.floor(Math.random() * 19);
+    };
+  
+    // ------------------------------------------------------------
+    // Grow one terrain blob
+    // ------------------------------------------------------------
+  
+    const growTerrain = (startX, startY, targetSize) => {
+      const blob = [[startX, startY]];
+  
+      while (blob.length < targetSize) {
+        const candidates = [];
+  
+        const seen = new Set(
+          blob.map(([x, y]) => `${x},${y}`)
+        );
+  
+        let centroidX = 0;
+        let centroidY = 0;
+  
+        for (const [x, y] of blob) {
+          centroidX += x;
+          centroidY += y;
+        }
+  
+        centroidX /= blob.length;
+        centroidY /= blob.length;
+  
+        for (const [x, y] of blob) {
+          for (const [dx, dy] of [
+            [0, 1],
+            [0, -1],
+            [1, 0],
+            [-1, 0]
+          ]) {
+            const nx = x + dx;
+            const ny = y + dy;
+            const key = `${nx},${ny}`;
+  
+            if (seen.has(key)) {
+              continue;
+            }
+  
+            const distance = Math.sqrt(
+              (nx - centroidX) ** 2 +
+              (ny - centroidY) ** 2
+            );
+  
+            const weight =
+              1 / (1 + distance * 0.5);
+  
+            candidates.push([nx, ny, weight]);
+            seen.add(key);
+          }
+        }
+  
+        if (candidates.length === 0) {
+          break;
+        }
+  
+        let totalWeight = 0;
+  
+        for (const [, , weight] of candidates) {
+          totalWeight += weight;
+        }
+  
+        let randomValue =
+          Math.random() * totalWeight;
+  
+        for (const [x, y, weight] of candidates) {
+          randomValue -= weight;
+  
+          if (randomValue <= 0) {
+            blob.push([x, y]);
+            break;
+          }
+        }
+      }
+  
+      return blob;
+    };
+  
+    // ------------------------------------------------------------
+    // Generate 30-40% terrain
+    // ------------------------------------------------------------
+  
+    const area = width * height;
+  
+    const targetTerrainCount = Math.floor(
+      area * (0.3 + Math.random() * 0.1)
+    );
+  
+    let terrainCount = 0;
+    let attempts = 0;
+  
+    const maximumAttempts = area * 5;
+  
+    while (
+      terrainCount < targetTerrainCount &&
+      attempts < maximumAttempts
+    ) {
+      attempts++;
+  
+      const startX = Math.floor(Math.random() * width);
+      const startY = Math.floor(Math.random() * height);
+  
+      // Don't start terrain directly on or next to the horse.
+      if (
+        Math.abs(startX - horseX) +
+          Math.abs(startY - horseY) <
+        2
+      ) {
+        continue;
+      }
+  
+      // Don't start terrain directly on or next to the unicorn.
+      if (
+        unicornX !== null &&
+        Math.abs(startX - unicornX) +
+          Math.abs(startY - unicornY) <
+        2
+      ) {
+        continue;
+      }
+  
+      if (nearTerrain(startX, startY)) {
+        continue;
+      }
+  
+      const targetSize = randomTerrainSize();
+  
+      const blob = growTerrain(
+        startX,
+        startY,
+        targetSize
+      );
+  
+      const validCells = blob.filter(([x, y]) => {
+        if (
+          x < 0 ||
+          x >= width ||
+          y < 0 ||
+          y >= height
+        ) {
+          return false;
+        }
+  
+        // Horse.
+        if (index(x, y) === horseIndex) {
+          return false;
+        }
+  
+        // Unicorn.
+        if (
+          unicornIndex !== null &&
+          index(x, y) === unicornIndex
+        ) {
+          return false;
+        }
+  
+        // Keep one Manhattan cell of clearance around horse.
+        if (
+          Math.abs(x - horseX) +
+            Math.abs(y - horseY) <
+          2
+        ) {
+          return false;
+        }
+  
+        // Keep one Manhattan cell of clearance around unicorn.
+        if (
+          unicornX !== null &&
+          Math.abs(x - unicornX) +
+            Math.abs(y - unicornY) <
+          2
+        ) {
+          return false;
+        }
+  
+        // Keep the original 3x3 terrain separation.
+        if (nearTerrain(x, y)) {
+          return false;
+        }
+  
+        return true;
+      });
+  
+      for (const [x, y] of validCells) {
+        cells[index(x, y)] = "water";
+        terrainCount++;
+      }
     }
-
+  
+    // ------------------------------------------------------------
+    // Wall budget
+    // ------------------------------------------------------------
+  
+    const budgetBase = Math.floor(
+      Math.sqrt(area) * 0.8
+    );
+  
+    const budget = Math.max(
+      6,
+      budgetBase +
+        Math.floor(Math.random() * 5) -
+        2
+    );
+  
+    budgetInput.value = budget;
+  
+    // ------------------------------------------------------------
+    // Put animals onto their pre-selected positions.
+    // ------------------------------------------------------------
+  
+    cells[horseIndex] = "horse";
+  
+    if (unicornIndex !== null) {
+      cells[unicornIndex] = "unicorn";
+    }
+  
     ensureAnimals(animalPositions());
   }
 
