@@ -637,7 +637,7 @@ export function waterGetsBoat(x, y, width) {
 }
 
 export function waterGetsWave(x, y, width) {
-    const index = y * width;
+    const index = y * width + width;
     const w = Math.sin(24690 + index * 67890) * 1e4;
     const v = w - Math.floor(w);
 
