@@ -1426,46 +1426,89 @@ function initEditor() {
     const marginY = Math.max(1, Math.floor(height / 4));
   
     // Original horse placement.
-    const horseX =
-      marginX +
-      Math.floor(
-        Math.random() * Math.max(1, width - marginX * 2)
-      );
-  
-    const horseY =
-      marginY +
-      Math.floor(
-        Math.random() * Math.max(1, height - marginY * 2)
-      );
-  
-    const horseIndex = index(horseX, horseY);
-  
-    // Unicorn is placed immediately afterward, while the entire
-    // map is still grass. It uses exactly the same central-region
-    // placement logic as the original horse.
+    let horseX;
+    let horseY;
+    let horseIndex;
+    
     let unicornX = null;
     let unicornY = null;
     let unicornIndex = null;
-  
+    
     if (
       mode.value === "lovebirds" ||
       mode.value === "lovers-quarrel"
     ) {
-      do {
-        unicornX =
+      const minimumAnimalDistance = 5;
+    
+      while (true) {
+        // Pick horse
+        horseX =
           marginX +
           Math.floor(
             Math.random() * Math.max(1, width - marginX * 2)
           );
-  
-        unicornY =
+    
+        horseY =
           marginY +
           Math.floor(
             Math.random() * Math.max(1, height - marginY * 2)
           );
-  
-        unicornIndex = index(unicornX, unicornY);
-      } while (unicornIndex === horseIndex);
+    
+        horseIndex = index(horseX, horseY);
+    
+        // Find possible unicorn positions
+        const possibleUnicornPositions = [];
+    
+        for (let y = marginY; y < height - marginY; y++) {
+          for (let x = marginX; x < width - marginX; x++) {
+            const distance =
+              Math.abs(x - horseX) +
+              Math.abs(y - horseY);
+    
+            if (distance >= minimumAnimalDistance) {
+              possibleUnicornPositions.push({
+                x,
+                y,
+                index: index(x, y),
+              });
+            }
+          }
+        }
+    
+        // If none exist, pick a new horse
+        if (possibleUnicornPositions.length === 0) {
+          continue;
+        }
+    
+        // Pick random unicorn from valid positions
+        const unicorn =
+          possibleUnicornPositions[
+            Math.floor(
+              Math.random() * possibleUnicornPositions.length
+            )
+          ];
+    
+        unicornX = unicorn.x;
+        unicornY = unicorn.y;
+        unicornIndex = unicorn.index;
+    
+        break;
+      }
+    } else {
+      // Original horse placement
+      horseX =
+        marginX +
+        Math.floor(
+          Math.random() * Math.max(1, width - marginX * 2)
+        );
+    
+      horseY =
+        marginY +
+        Math.floor(
+          Math.random() * Math.max(1, height - marginY * 2)
+        );
+    
+      horseIndex = index(horseX, horseY);
     }
   
     // ------------------------------------------------------------
