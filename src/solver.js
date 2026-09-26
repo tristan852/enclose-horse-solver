@@ -802,6 +802,11 @@ function createPuzzleCard(puzzle) {
   rows.forEach((row, y) => {
     [...row].forEach((symbol, x) => {
       const cell = document.createElement("div");
+      const centerX = Math.floor((width - 1) / 2);
+      const centerY = Math.floor((height - 1) / 2);
+      const worldX = x - centerX;
+      const worldY = y - centerY;
+      const highlighted = (worldX + worldY) % 2 !== 0;
 
       const isPortal =
         !symbols[symbol] &&
@@ -809,6 +814,7 @@ function createPuzzleCard(puzzle) {
 
       cell.className =
         "cell" +
+        (highlighted ? " highlighted" : "") +
         (symbol === "~" ? " water" : "") +
         (isPortal ? " portal" : "");
 

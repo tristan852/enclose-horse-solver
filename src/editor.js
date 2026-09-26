@@ -618,6 +618,13 @@ function initEditor() {
 
   function applyCell(cell, type, cellIndex) {
     const key = portalKey(type);
+    const x = cellIndex % width;
+    const y = Math.floor(cellIndex / width);
+    const centerX = centerOffset(width);
+    const centerY = centerOffset(height);
+    const worldX = x - centerX;
+    const worldY = y - centerY;
+    const highlighted = (worldX + worldY) % 2 !== 0;
     const placeholderKey = placeholderKeyAt(cellIndex);
     const wallState =
       puzzleSolved && type === "wall"
@@ -631,7 +638,7 @@ function initEditor() {
         : "";
     const placeholder = placeholderKey ? " portal-placeholder" : "";
 
-    cell.className = `cell ${type}${key ? " portal" : ""}${wallState}${enclosed}${placeholder}`;
+    cell.className = `cell${highlighted ? " highlighted" : ""} ${type}${key ? " portal" : ""}${wallState}${enclosed}${placeholder}`;
     cell.title = placeholderKey
       ? `Portal ${placeholderKey} placeholder`
       : tileTitle(type);
