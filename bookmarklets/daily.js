@@ -1,8 +1,8 @@
 (function () {
-  var level = window.DAILY_LEVELS && window.DAILY_LEVELS[0];
+  var level = window.__DAILY_LEVELS__ && window.__DAILY_LEVELS__[0];
 
   if (!level || !level.id) {
-    alert("Oops! I couldn't find today's level. Please open the Enclose Horse daily page and try again.");
+    alert("Oops! I couldn't find today's level. Please open enclose.horse and try again.");
     return;
   }
 
