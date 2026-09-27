@@ -617,7 +617,6 @@ function initEditor() {
     cell.title = placeholderKey
       ? `Portal ${placeholderKey} placeholder`
       : tileTitle(type);
-    cell.textContent = key ? "🌀" : "";
     cell.style.backgroundColor = key ? portalColor(key) : "";
 
     if (placeholderKey) {
