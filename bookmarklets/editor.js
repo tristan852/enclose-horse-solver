@@ -381,7 +381,7 @@
       setInput(sizeH, height);
       
       function center(length) {
-        return Math.ceil((length - 1) / 2);
+        return Math.floor((length - 1) / 2);
       }
       
       const centerX = center(actualWidth);
