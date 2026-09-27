@@ -903,7 +903,7 @@ function initEditor() {
       ? `score ${solutionScore} · solved`
       : puzzleReason;
     statusDetail.textContent =
-      `${result} · ${width} × ${height} · ${wallCount}/${budgetInput.value} walls`;
+      `${result} · ${width} × ${height} · ${budgetInput.value - wallCount}/${budgetInput.value} walls`;
   }
 
   function resetSolveButton() {
