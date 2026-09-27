@@ -156,6 +156,9 @@
 
     const reserved = new Set([".", "~", "W", "H", "U", "C", "G", "S"]);
     const portals = {};
+    const mappedPortals = new Map();
+    
+    let largestPortalIndex = -1;
     let puzzleHasUnicorn = false;
 
     for (let y = 0; y < height; y++) {
@@ -169,9 +172,18 @@
         if (reserved.has(character)) {
           continue;
         }
+        
+        rows[y][x] = "0";
 
         if (!portals[character]) {
+        
           portals[character] = [];
+          
+          const code = character.charCodeAt(0);
+          const portalIndex = code >= 97 ? code - 87 : code - 48;
+          
+          mappedPortals.set(portalIndex, portals[character]);
+          largestPortalIndex = Math.max(largestPortalIndex, portalIndex);
         }
 
         portals[character].push([x, y]);
@@ -339,7 +351,6 @@
           case "S":
             groups.bees.push([x, y]);
             break;
-          case ".":
           default:
             break;
         }
@@ -358,6 +369,106 @@
       selectTool("Unicorn (U)");
 
       for (const [x, y] of groups.unicorn) {
+        paint(x, y);
+      }
+    }
+    
+    if (Object.keys(portals).length) {
+    
+      function center(length) {
+        return Math.ceil((length - 1) / 2);
+      }
+      
+      const centerX = center(width);
+      const centerY = center(height);
+      
+      function bigMapTile(x, y) {
+        const x2 = x - center(30) + centerX;
+        const y2 = y - center(30) + centerY;
+        
+        if(x2 < 0 || x2 >= width || y2 < 0 || y2 >= height) return null;
+        
+        return rows[y2][x2];
+      }
+      
+      function bigMapTileFree(x, y) {
+        const tile = bigMapTile(x, y);
+        
+        if(tile === null) return true;
+        return !"HU0".contains(tile);
+      }
+      
+      setInput(sizeW, 30);
+      setInput(sizeH, 30);
+      await new Promise(resolve => requestAnimationFrame(resolve));
+      await new Promise(resolve => requestAnimationFrame(resolve));
+      
+      selectTool("Portal (O)");
+      
+      const removeLater = [];
+      
+      let freeX = 0;
+      let freeY = 0;
+      
+      for(let portalIndex = 0; portalIndex <= largestPortalIndex; portalIndex++) {
+        
+        const cells = mappedPortals.get(portalIndex);
+        if(!cells) {
+          
+          while(!bigMapTileFree(freeX, freeY)) {
+          
+            freeX++;
+            if(freeX == width) {
+              
+              freeX = 0;
+              freeY++;
+            }
+          }
+          
+          const x1 = freeX;
+          const y1 = freeY;
+          
+          freeX++;
+          if(freeX == width) {
+            
+            freeX = 0;
+            freeY++;
+          }
+          
+          while(!bigMapTileFree(freeX, freeY)) {
+          
+            freeX++;
+            if(freeX == width) {
+              
+              freeX = 0;
+              freeY++;
+            }
+          }
+          
+          const x2 = freeX;
+          const y2 = freeY;
+          
+          freeX++;
+          if(freeX == width) {
+            
+            freeX = 0;
+            freeY++;
+          }
+          
+          paint(x1, y1);
+          paint(x2, y2);
+          
+          removeLater.push([x1, y1]);
+          
+          continue;
+        }
+        
+        paint(...cells[0]);
+        paint(...cells[1]);
+      }
+
+      for(const [x, y] of removeLater) {
+        
         paint(x, y);
       }
     }
@@ -394,15 +505,6 @@
 
       for (const [x, y] of groups.bees) {
         paint(x, y);
-      }
-    }
-
-    if (Object.keys(portals).length) {
-      selectTool("Portal (O)");
-
-      for (const [, cells] of Object.entries(portals)) {
-        paint(...cells[0]);
-        paint(...cells[1]);
       }
     }
 
