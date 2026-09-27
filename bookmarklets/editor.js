@@ -54,7 +54,7 @@
 
     const ascii = data.map;
     const walls = data.budget ?? 12;
-    const rows = ascii.trim().split(/\r?\n/).map(row => row.trim());
+    const rows = ascii.trim().split(/\r?\n/).map(row => [...row.trim()]);
 
     if (!rows.length || !rows[0]) {
       alert("Empty level.");
@@ -410,12 +410,6 @@
         if(tile === null) return true;
         return !"HU0".includes(tile);
       }
-      
-      console.log(bigMapTile(0, 0));
-      console.log(bigMapTile(1, 0));
-      console.log(bigMapTile(0, 1));
-      console.log(bigMapTile(1, 1));
-      console.log(bigMapTile(2, 0));
       
       selectTool("Portal (O)");
       
