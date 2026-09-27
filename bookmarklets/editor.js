@@ -61,8 +61,8 @@
       return;
     }
 
-    const width = rows[0].length;
-    const height = rows.length;
+    let width = rows[0].length;
+    let height = rows.length;
 
     if (width < 8 || width > 30 || height < 8 || height > 30) {
       alert(
@@ -375,12 +375,23 @@
     
     if (Object.keys(portals).length) {
     
+      const actualWidth = width;
+      const actualHeight = height;
+      
+      width = 30;
+      height = 30;
+      
+      setInput(sizeW, width);
+      setInput(sizeH, height);
+      await new Promise(resolve => requestAnimationFrame(resolve));
+      await new Promise(resolve => requestAnimationFrame(resolve));
+      
       function center(length) {
         return Math.ceil((length - 1) / 2);
       }
       
-      const centerX = center(width);
-      const centerY = center(height);
+      const centerX = center(actualWidth);
+      const centerY = center(actualHeight);
       
       function bigMapPaint(x, y) {
         const x2 = x - centerX + center(30);
@@ -393,7 +404,7 @@
         const x2 = x - center(30) + centerX;
         const y2 = y - center(30) + centerY;
         
-        if(x2 < 0 || x2 >= width || y2 < 0 || y2 >= height) return null;
+        if(x2 < 0 || x2 >= actualWidth || y2 < 0 || y2 >= actualHeight) return null;
         
         return rows[y2][x2];
       }
@@ -404,11 +415,6 @@
         if(tile === null) return true;
         return !"HU0".contains(tile);
       }
-      
-      setInput(sizeW, 30);
-      setInput(sizeH, 30);
-      await new Promise(resolve => requestAnimationFrame(resolve));
-      await new Promise(resolve => requestAnimationFrame(resolve));
       
       selectTool("Portal (O)");
       
