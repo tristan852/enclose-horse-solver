@@ -235,6 +235,7 @@
       setter.call(element, String(value));
       element.dispatchEvent(new Event("input", { bubbles: true }));
       element.dispatchEvent(new Event("change", { bubbles: true }));
+      element.blur();
     }
 
     setInput(sizeW, width);
@@ -407,7 +408,7 @@
         const tile = bigMapTile(x, y);
         
         if(tile === null) return true;
-        return !"HU0".contains(tile);
+        return !"HU0".includes(tile);
       }
       
       selectTool("Portal (O)");
