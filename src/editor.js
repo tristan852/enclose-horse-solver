@@ -285,7 +285,7 @@ function initEditor() {
       cherry: "Cherry +3",
       apple: "Golden Apple +10",
       bee: "Bee Swarm -5"
-    })[tile] || (portalKey(tile) ? `Portal ${portalKey(tile)}` : "");
+    })[tile] || (portalKey(tile) ? `Portal ${portalKey(tile).toUpperCase()}` : "");
 
   const encodeCell = tile =>
     TILE_CHARS[tile] || portalKey(tile) || ".";
