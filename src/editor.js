@@ -46,33 +46,7 @@ function editorMarkup() {
         </div>
 
         <div class="toolbar" aria-label="Editor toolbar">
-          <div class="toolbar-top">
-            <div class="tool-group">
-              <span class="tool-label">Game mode</span>
-              <select id="mode" aria-label="Game mode">
-                <option value="default">Default</option>
-                <option value="lovebirds">Lovebirds</option>
-                <option value="lovers-quarrel">Lovers Quarrel</option>
-                <option value="costly-walls">Costly Walls</option>
-              </select>
-            </div>
-            <div class="tool-group">
-              <span class="tool-label">Width</span>
-              <input id="width" type="number" min="8" max="30" value="12" aria-label="Width">
-            </div>
-            <div class="tool-group">
-              <span class="tool-label">Height</span>
-              <input id="height" type="number" min="8" max="30" value="12" aria-label="Height">
-            </div>
-            <div class="tool-group">
-              <span class="tool-label">Wall budget</span>
-              <input id="budget" type="number" min="1" max="99" value="12" aria-label="Wall budget">
-            </div>
-          </div>
-
-          <div class="toolbar-divider">
-      </div>
-
+          
           <div class="tool-row placement-row">
             <div class="tool-group">
               <span class="tool-label">Place</span>
@@ -152,8 +126,7 @@ function editorMarkup() {
             </div>
           </div>
 
-          <div class="portal-palette" id="portal-palette" aria-label="Portal palette">
-      </div>
+          <div class="portal-palette" id="portal-palette" aria-label="Portal palette"></div>
 
           <div class="tool-row utility-row">
             <div class="tool-group">
@@ -176,6 +149,32 @@ function editorMarkup() {
               <button class="secondary-btn icon-tool" id="solve" aria-label="Solve" title="Solve">
                 <i data-lucide="sparkle"></i>
               </button>
+            </div>
+          </div>
+          
+          <div class="toolbar-divider"></div>
+          
+          <div class="toolbar-top">
+            <div class="tool-group">
+              <span class="tool-label">Game mode</span>
+              <select id="mode" aria-label="Game mode">
+                <option value="default">Default</option>
+                <option value="lovebirds">Lovebirds</option>
+                <option value="lovers-quarrel">Lovers Quarrel</option>
+                <option value="costly-walls">Costly Walls</option>
+              </select>
+            </div>
+            <div class="tool-group">
+              <span class="tool-label">Width</span>
+              <input id="width" type="number" min="8" max="30" value="12" aria-label="Width">
+            </div>
+            <div class="tool-group">
+              <span class="tool-label">Height</span>
+              <input id="height" type="number" min="8" max="30" value="12" aria-label="Height">
+            </div>
+            <div class="tool-group">
+              <span class="tool-label">Wall budget</span>
+              <input id="budget" type="number" min="1" max="99" value="12" aria-label="Wall budget">
             </div>
           </div>
         </div>
