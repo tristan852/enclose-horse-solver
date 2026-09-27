@@ -1053,6 +1053,10 @@ function initEditor() {
     if (eraseType) {
       uniqueTargets.forEach(target => {
         if (portalKey(eraseType)) {
+        
+          console.log(cells[target]);
+          console.log(portalKey(cells[target]));
+          
           if (portalKey(cells[target])) {
             removePortalPairAt(target, changed);
           }
