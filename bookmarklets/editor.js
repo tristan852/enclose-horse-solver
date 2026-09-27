@@ -411,6 +411,12 @@
         return !"HU0".includes(tile);
       }
       
+      console.log(bigMapTile(0, 0));
+      console.log(bigMapTile(1, 0));
+      console.log(bigMapTile(0, 1));
+      console.log(bigMapTile(1, 1));
+      console.log(bigMapTile(2, 0));
+      
       selectTool("Portal (O)");
       
       const removeLater = [];
