@@ -30,6 +30,8 @@ const TILE_BY_CHAR = Object.freeze({
   S: TILE.BEE_SWARM,
 });
 
+const PORTALS = "0123456789abcdefghijklmnopqrstuvwxyz".split("");
+
 function makeGrid(width, height, value = null) {
   return Array.from(
     { length: width },
@@ -779,12 +781,14 @@ function createPuzzleCard(puzzle) {
   board.style.gridTemplateColumns =
     `repeat(${width}, var(--cell))`;
 
-  const symbols = {
-    H: "🐴",
-    U: "🦄",
-    C: "🍒",
-    G: "🍎",
-    S: "🐝"
+  const classNames = {
+    H: "horse",
+    U: "unicorn",
+    C: "cherry",
+    G: "apple",
+    S: "bee",
+    ~: "water",
+    .: "grass"
   };
   
   const titles = {
@@ -804,29 +808,26 @@ function createPuzzleCard(puzzle) {
       const worldY = y - centerY;
       const highlighted = (worldX + worldY) % 2 !== 0;
 
-      const isPortal =
-        !symbols[symbol] &&
-        ![".", "#", "W", "~"].includes(symbol);
+      const type = classNames[symbol];
+      const isPortal = PORTALS.includes(symbol);
+      
+      cell.className = `cell${highlighted ? " highlighted" : ""}${type ? " " + type : ""}${isPortal ? " portal" : ""}`;
 
-      cell.className =
-        "cell" +
-        (highlighted ? " highlighted" : "") +
-        (symbol === "~" ? " water" : "") +
-        (isPortal ? " portal" : "");
-
-      if (symbol === "~") {
+      if (type === "water") {
         
-        cell.textContent =
-          waterGetsBoat(x, y, width) ? "⛵" :
-          waterGetsWave(x, y, width) ? "🌊" :
+        const effect =
+          waterGetsBoat(x, y, width) ? "boat" :
+          waterGetsWave(x, y, width) ? "wave" :
           "";
-          
+        
+        if (effect) cell.classList.add(effect);
+        
       } else if (isPortal) {
-        cell.textContent = "🌀";
+        
         cell.style.backgroundColor = portalColor(symbol);
         cell.title = `Portal ${symbol}`;
+        
       } else {
-        cell.textContent = symbols[symbol] || "";
         
         if(titles[symbol]) cell.title = titles[symbol];
       }
