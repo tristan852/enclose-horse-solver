@@ -825,7 +825,7 @@ function createPuzzleCard(puzzle) {
       } else if (isPortal) {
         
         cell.style.backgroundColor = portalColor(symbol);
-        cell.title = `Portal ${symbol}`;
+        cell.title = `Portal ${symbol.toUpperCase()}`;
         
       } else {
         

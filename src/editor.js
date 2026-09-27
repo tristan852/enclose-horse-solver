@@ -615,7 +615,7 @@ function initEditor() {
 
     cell.className = `cell${highlighted ? " highlighted" : ""} ${type}${key ? " portal" : ""}${wallState}${enclosed}${placeholder}`;
     cell.title = placeholderKey
-      ? `Portal ${placeholderKey} placeholder`
+      ? `Portal ${placeholderKey.toUpperCase()} (pending)`
       : tileTitle(type);
     cell.style.backgroundColor = key ? portalColor(key) : "";
 
@@ -1314,9 +1314,9 @@ function initEditor() {
   portalTypes.forEach(key => {
     const choice = document.createElement("button");
     choice.className = "portal-choice";
-    choice.textContent = key;
-    choice.title = `Portal ${key}`;
-    choice.setAttribute("aria-label", `Portal ${key}`);
+    choice.textContent = key.toUpperCase();
+    choice.title = `Portal ${key.toUpperCase()}`;
+    choice.setAttribute("aria-label", `Portal ${key.toUpperCase()}`);
     choice.style.backgroundColor = portalColor(key);
     choice.dataset.portal = key;
     choice.addEventListener("click", () => setActiveTool(`portal-${key}`));
