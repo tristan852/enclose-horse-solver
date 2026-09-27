@@ -109,8 +109,7 @@
       }
 
       document.querySelector("#playButtons")?.firstElementChild?.click();
-      await new Promise(resolve => requestAnimationFrame(resolve));
-
+      
       const game = document.querySelector("#game");
 
       function wallCellCenter(x, y) {
@@ -241,13 +240,10 @@
     setInput(sizeW, width);
     setInput(sizeH, height);
     setInput(budget, walls);
-    await new Promise(resolve => requestAnimationFrame(resolve));
-    await new Promise(resolve => requestAnimationFrame(resolve));
 
     document
       .querySelector('#editorIconButtons canvas[title="Clear All (X)"]')
       ?.click();
-    await new Promise(resolve => requestAnimationFrame(resolve));
 
     function selectBrush(title) {
       const element = document.querySelector(
@@ -383,8 +379,6 @@
       
       setInput(sizeW, width);
       setInput(sizeH, height);
-      await new Promise(resolve => requestAnimationFrame(resolve));
-      await new Promise(resolve => requestAnimationFrame(resolve));
       
       function center(length) {
         return Math.ceil((length - 1) / 2);
@@ -494,10 +488,11 @@
         await sleep(5000);
       }
       
+      width = actualWidth;
+      height = actualHeight;
+      
       setInput(sizeW, width);
       setInput(sizeH, height);
-      await new Promise(resolve => requestAnimationFrame(resolve));
-      await new Promise(resolve => requestAnimationFrame(resolve));
     }
 
     if (groups.water.length) {
