@@ -472,11 +472,14 @@
         
         bigMapPaint(...cells[0]);
         bigMapPaint(...cells[1]);
+        
+        console.log(cells);
       }
 
       for(const [x, y] of removeLater) {
         
         paint(x, y);
+        console.log(x, y);
       }
       
       setInput(sizeW, width);
