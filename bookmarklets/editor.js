@@ -107,6 +107,8 @@
         alert("The copied puzzle contains no walls to paste.");
         return;
       }
+      
+      document.activeElement?.blur();
 
       document.querySelector("#playButtons")?.firstElementChild?.click();
       
@@ -224,6 +226,8 @@
       alert("Could not find the enclose.horse editor.");
       return;
     }
+    
+    document.activeElement?.blur();
 
     function setInput(element, value) {
       element.focus();
