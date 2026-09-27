@@ -471,6 +471,11 @@
         
         paint(x, y);
       }
+      
+      setInput(sizeW, width);
+      setInput(sizeH, height);
+      await new Promise(resolve => requestAnimationFrame(resolve));
+      await new Promise(resolve => requestAnimationFrame(resolve));
     }
 
     if (groups.water.length) {
