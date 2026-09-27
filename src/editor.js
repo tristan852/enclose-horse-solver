@@ -704,7 +704,7 @@ function initEditor() {
 
         if (
           !["grass", "water", "horse", "unicorn"].includes(selectedType) &&
-          cells[cellIndex] === selectedType
+          (cells[cellIndex] === selectedType || (portalKey(cells[cellIndex]) && portalKey(selectedType)))
         ) {
           activeAction.eraseType = selectedType;
         }
@@ -1053,9 +1053,6 @@ function initEditor() {
     if (eraseType) {
       uniqueTargets.forEach(target => {
         if (portalKey(eraseType)) {
-        
-          console.log(cells[target]);
-          console.log(portalKey(cells[target]));
           
           if (portalKey(cells[target])) {
             removePortalPairAt(target, changed);
