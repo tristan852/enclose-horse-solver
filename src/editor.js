@@ -703,7 +703,7 @@ function initEditor() {
         const selectedType = activeTool;
 
         if (
-          !["grass", "horse", "unicorn"].includes(selectedType) &&
+          !["grass", "water", "horse", "unicorn"].includes(selectedType) &&
           cells[cellIndex] === selectedType
         ) {
           activeAction.eraseType = selectedType;
