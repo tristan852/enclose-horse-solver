@@ -417,6 +417,9 @@
       let freeX = 0;
       let freeY = 0;
       
+      // TODO remove this and .log
+      const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
+      
       for(let portalIndex = 0; portalIndex <= largestPortalIndex; portalIndex++) {
         
         const cells = mappedPortals.get(portalIndex);
@@ -474,12 +477,15 @@
         bigMapPaint(...cells[1]);
         
         console.log(cells);
+        await sleep(5000);
       }
 
       for(const [x, y] of removeLater) {
         
         paint(x, y);
+        
         console.log(x, y);
+        await sleep(5000);
       }
       
       setInput(sizeW, width);
