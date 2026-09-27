@@ -36,13 +36,14 @@ function editorMarkup() {
       </div>
 
       <div class="workspace editor-workspace">
+        
+        <p class="board-note">Click or drag across the map.</p>
         <div class="board-wrap">
           <div class="board-container">
             <div class="board editor-board" id="board" aria-label="Puzzle map">
             </div>
           </div>
         </div>
-        <p class="board-note">Click or drag across the map.</p>
 
         <div class="toolbar" aria-label="Editor toolbar">
           <div class="toolbar-top">
