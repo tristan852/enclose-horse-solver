@@ -787,8 +787,8 @@ function createPuzzleCard(puzzle) {
     C: "cherry",
     G: "apple",
     S: "bee",
-    ~: "water",
-    .: "grass"
+    "~": "water",
+    ".": "grass"
   };
   
   const titles = {
