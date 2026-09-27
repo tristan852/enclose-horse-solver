@@ -770,7 +770,7 @@ function createPuzzleCard(puzzle) {
       <i data-lucide="copy"></i>
     </button>
     <div class="meta">
-      Puzzle ${puzzle.id || ""} · ${width} x ${height} · wall budget: ${puzzle.budget}
+      Puzzle <code>${puzzle.id || ""}</code> · ${width} x ${height} · wall budget: ${puzzle.budget}
     </div>
   `;
   
