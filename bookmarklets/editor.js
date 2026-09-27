@@ -382,6 +382,13 @@
       const centerX = center(width);
       const centerY = center(height);
       
+      function bigMapPaint(x, y) {
+        const x2 = x - centerX + center(30);
+        const y2 = y - centerY + center(30);
+        
+        paint(x2, y2);
+      }
+      
       function bigMapTile(x, y) {
         const x2 = x - center(30) + centerX;
         const y2 = y - center(30) + centerY;
@@ -463,8 +470,8 @@
           continue;
         }
         
-        paint(...cells[0]);
-        paint(...cells[1]);
+        bigMapPaint(...cells[0]);
+        bigMapPaint(...cells[1]);
       }
 
       for(const [x, y] of removeLater) {
