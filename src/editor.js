@@ -222,6 +222,7 @@ function initEditor() {
   let future = [];
   let isPainting = false;
   let lastHoverIndex = null;
+  let hoveredCells = new Set();
   let lastPaintIndex = null;
   let activeAction = null;
   let portalCounter = 0;
@@ -612,29 +613,40 @@ function initEditor() {
         ? " enclosed"
         : "";
     const placeholder = placeholderKey ? " portal-placeholder" : "";
-
-    cell.className = `cell${highlighted ? " highlighted" : ""} ${type}${key ? " portal" : ""}${wallState}${enclosed}${placeholder}`;
-    cell.title = placeholderKey
+    const effect = type === "water"
+      ? waterGetsBoat(cellIndex % width, Math.floor(cellIndex / width), width)
+        ? " boat"
+        : waterGetsWave(cellIndex % width, Math.floor(cellIndex / width), width)
+          ? " wave"
+          : ""
+      : "";
+    const className = `cell${highlighted ? " highlighted" : ""}${hoveredCells.has(cellIndex) ? " hover-preview" : ""} ${type}${key ? " portal" : ""}${wallState}${enclosed}${placeholder}${effect}`;
+    const title = placeholderKey
       ? `Portal ${placeholderKey.toUpperCase()} (pending)`
       : tileTitle(type);
-    cell.style.backgroundColor = key ? portalColor(key) : "";
+    const backgroundColor = key ? portalColor(key) : "";
+    const placeholderColor = placeholderKey ? portalColor(placeholderKey) : "";
+    const renderState = JSON.stringify([
+      className,
+      title,
+      backgroundColor,
+      placeholderColor,
+    ]);
 
-    if (placeholderKey) {
-      cell.style.setProperty("--portal-color", portalColor(placeholderKey));
-    }
+    if (cell.dataset.renderState === renderState) return false;
 
-    if (type === "water") {
+    cell.className = className;
+    cell.title = title;
+    cell.style.backgroundColor = backgroundColor;
     
-      const x = cellIndex % width;
-      const y = Math.floor(cellIndex / width);
-      
-      const effect =
-        waterGetsBoat(x, y, width) ? "boat" :
-        waterGetsWave(x, y, width) ? "wave" :
-        "";
-
-      if (effect) cell.classList.add(effect);
+    if (placeholderColor) {
+      cell.style.setProperty("--portal-color", placeholderColor);
+    } else {
+      cell.style.removeProperty("--portal-color");
     }
+
+    cell.dataset.renderState = renderState;
+    return true;
   }
 
   function effectiveBrush() {
@@ -656,9 +668,7 @@ function initEditor() {
     const startX = x - offset;
     const startY = y - offset;
 
-    document.querySelectorAll(".hover-preview").forEach(cell => {
-      cell.classList.remove("hover-preview");
-    });
+    const nextHoveredCells = new Set();
 
     for (let dy = 0; dy < size; dy++) {
       for (let dx = 0; dx < size; dx++) {
@@ -671,23 +681,39 @@ function initEditor() {
           nextY >= 0 &&
           nextY < height
         ) {
-          board.children[index(nextX, nextY)]?.classList.add("hover-preview");
+          nextHoveredCells.add(index(nextX, nextY));
         }
       }
     }
+
+    for (const previousIndex of hoveredCells) {
+      if (!nextHoveredCells.has(previousIndex)) {
+        board.children[previousIndex]?.classList.remove("hover-preview");
+      }
+    }
+
+    for (const nextIndex of nextHoveredCells) {
+      if (!hoveredCells.has(nextIndex)) {
+        board.children[nextIndex]?.classList.add("hover-preview");
+      }
+    }
+
+    hoveredCells = nextHoveredCells;
   }
 
   function clearHover() {
     lastHoverIndex = null;
-    document.querySelectorAll(".hover-preview").forEach(cell => {
-      cell.classList.remove("hover-preview");
-    });
+    for (const cellIndex of hoveredCells) {
+      board.children[cellIndex]?.classList.remove("hover-preview");
+    }
+    hoveredCells.clear();
   }
 
   function buildGrid(next = cells) {
     cells = next;
     recomputeSolution();
     board.innerHTML = "";
+    hoveredCells.clear();
     board.style.gridTemplateColumns = `repeat(${width}, var(--cell))`;
     board.style.gridTemplateRows = `repeat(${height}, var(--cell))`;
 
@@ -868,9 +894,9 @@ function initEditor() {
     recomputeSolution();
 
     [...board.children].forEach((cell, cellIndex) => {
-      applyCell(cell, cells[cellIndex], cellIndex);
+      const updated = applyCell(cell, cells[cellIndex], cellIndex);
 
-      if (changed.has(cellIndex) && cells[cellIndex] !== "grass") {
+      if (updated && changed.has(cellIndex) && cells[cellIndex] !== "grass") {
         requestAnimationFrame(() => {
           cell.classList.remove("tile-pop");
           void cell.offsetWidth;
