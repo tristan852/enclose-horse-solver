@@ -722,24 +722,29 @@ function initEditor() {
       applyCell(cell, type, cellIndex);
 
       cell.addEventListener("pointerdown", event => {
-        if (event.button !== 0) return;
-
+        if (event.button !== 0 && event.button !== 2) return;
+      
         event.preventDefault();
-        beginAction("paint");
+      
         const selectedType = activeTool;
-
+        let eraseType = null;
+      
         if (
           !["grass", "water", "horse", "unicorn"].includes(selectedType) &&
           (cells[cellIndex] === selectedType || (portalKey(cells[cellIndex]) && portalKey(selectedType)))
         ) {
-          activeAction.eraseType = selectedType;
+          eraseType = selectedType;
         }
-
+      
         if (selectedType === "wall") {
-          activeAction.eraseType =
-            cells[cellIndex] === "wall" ? "wall" : null;
+          eraseType = cells[cellIndex] === "wall" ? "wall" : null;
         }
-
+        
+        if(event.button === 2 && !eraseType) return;
+      
+        beginAction("paint");
+        activeAction.eraseType = eraseType;
+      
         isPainting = true;
         lastPaintIndex = cellIndex;
         updateHover(cellIndex);
