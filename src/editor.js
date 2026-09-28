@@ -756,7 +756,7 @@ function initEditor() {
       cell.addEventListener("pointerenter", () => {
         updateHover(cellIndex);
 
-        if (isPainting && cellIndex !== lastPaintIndex) {
+        if (isPainting && cellIndex !== lastPaintIndex && (!portalKey(activeTool) || activeAction?.eraseType)) {
           lastPaintIndex = cellIndex;
           paint(cellIndex, activeTool);
         }
