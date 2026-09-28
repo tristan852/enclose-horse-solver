@@ -729,18 +729,20 @@ function initEditor() {
         const selectedType = activeTool;
         let eraseType = null;
       
-        if (
-          !["grass", "water", "horse", "unicorn"].includes(selectedType) &&
-          (cells[cellIndex] === selectedType || (portalKey(cells[cellIndex]) && portalKey(selectedType)))
-        ) {
+        if(event.button === 2) {
+          
+          if(["grass", "horse", "unicorn"].includes(selectedType)) return;
           eraseType = selectedType;
+          
+        } else {
+          
+          if (
+            !["grass", "water", "horse", "unicorn"].includes(selectedType) &&
+            (cells[cellIndex] === selectedType || (portalKey(cells[cellIndex]) && portalKey(selectedType)))
+          ) {
+            eraseType = selectedType;
+          }
         }
-      
-        if (selectedType === "wall") {
-          eraseType = cells[cellIndex] === "wall" ? "wall" : null;
-        }
-        
-        if(event.button === 2 && !eraseType) return;
       
         beginAction("paint");
         activeAction.eraseType = eraseType;
