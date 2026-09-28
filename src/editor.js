@@ -804,7 +804,7 @@ function initEditor() {
   }
 
   function centerOffset(size) {
-    return Math.ceil((size - 1) / 2);
+    return Math.floor((size - 1) / 2);
   }
 
   function tileCoordinate(cellIndex, gridWidth = width) {
