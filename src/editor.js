@@ -23,7 +23,7 @@ function editorMarkup() {
       <div class="editor-head">
         <div>
           <h2 id="editor-title">Puzzle editor</h2>
-          <p id="editor-subtitle" class="subtitle">Create a puzzle for the herd.</p>
+          <p id="editor-subtitle" class="subtitle">Create your own puzzle.</p>
         </div>
         <button
           class="control-button"
