@@ -900,11 +900,13 @@
     const bookmarklet = __BOOKMARKLET__;
     const bookmarklet2 = __BOOKMARKLET2__;
     const bookmarklet3 = __BOOKMARKLET3__;
+    const bookmarklet4 = __BOOKMARKLET4__;
     
     document.addEventListener("DOMContentLoaded", function() {
       document.getElementById("bookmark").href = bookmarklet;
       document.getElementById("editor-bookmark").href = bookmarklet2;
       document.getElementById("daily-bookmark").href = bookmarklet3;
+      document.getElementById("weekly-bookmark").href = bookmarklet4;
     });
   </script>
   
@@ -966,6 +968,15 @@
         </a>
         <small>
           Use on enclose.horse to open the next daily level early, before it releases at midnight in your timezone.
+        </small>
+      </div>
+      
+      <div class="bookmark">
+        <a id="weekly-bookmark" href="#" draggable="true">
+          ◈ Open next weekly level
+        </a>
+        <small>
+          Use on enclose.horse to open the next weekly level early, before it releases at midnight each Wednesday in your timezone.
         </small>
       </div>
     </div>
