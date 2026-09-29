@@ -573,6 +573,7 @@ export class PuzzleSolver {
     console.log(puzzle);
     if(puzzle.optimalScore) {
       
+      console.log("match: ", puzzle.optimalScore == score);
     }
 
     return {
