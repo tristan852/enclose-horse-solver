@@ -1019,7 +1019,7 @@ function initEditor() {
         true
       );
       const solver = new PuzzleSolver(puzzle, staticModel);
-      const result = await solver.solve(30);
+      const result = await solver.requestSolutions(30);
 
       if (request.cancelled || solveRequest !== request) return;
 

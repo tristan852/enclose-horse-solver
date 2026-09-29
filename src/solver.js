@@ -442,8 +442,21 @@ export class PuzzleSolver {
     this.solutions = [];
     this.hasMore = false;
   }
+  
+  async function requestSolutions(limit) {
+    const startedAt = performance.now();
+    const result = await puzzleSolver.solve(limit);
+    const elapsedMs = performance.now() - startedAt;
+    const elapsed = `${elapsedMs.toFixed(1)} ms`;
+  
+    console.info(
+      `Clingo: elapsed=${elapsed}, solution_count=${result.solutions.length}, has_more=${result.hasMore}`
+    );
+  
+    return result;
+  }
 
-  async solve(limit = 30) {
+  async solve(limit) {
     const program = this.staticModel + "\n" + generateFacts(this.puzzle);
     const foundSolutions = [];
     const seenWallKeys = new Set();
@@ -1026,22 +1039,9 @@ async function initiallySolvePuzzle(puzzle, view, staticModel) {
   let solutionIndex = 0;
   const puzzleSolver = new PuzzleSolver(puzzle, staticModel);
 
-  async function requestSolutions() {
-    const startedAt = performance.now();
-    const result = await puzzleSolver.solve(100);
-    const elapsedMs = performance.now() - startedAt;
-    const elapsed = `${elapsedMs.toFixed(1)} ms`;
-  
-    console.info(
-      `Clingo: elapsed=${elapsed}, solution_count=${result.solutions.length}, has_more=${result.hasMore}`
-    );
-  
-    return result;
-  }
-
   setWorking(view.status, "finding optimal solutions…");
 
-  const {solutions, hasMore} = await requestSolutions();
+  const {solutions, hasMore} = await puzzleSolver.requestSolutions(100);
 
   if (!solutions || solutions.length == 0) {
     view.status.querySelector("small").textContent =
