@@ -443,7 +443,7 @@ export class PuzzleSolver {
     this.hasMore = false;
   }
   
-  async function requestSolutions(limit) {
+  async requestSolutions(limit) {
     const startedAt = performance.now();
     const result = await puzzleSolver.solve(limit);
     const elapsedMs = performance.now() - startedAt;
