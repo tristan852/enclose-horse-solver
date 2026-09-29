@@ -5,6 +5,23 @@
     alert("Open an enclose.horse level first.");
     return;
   }
+  
+  function mergeData(oldData, newData) {
+    if(!newData || !newData.id || newData.id !== oldData.id) return oldData;
+  
+    const result = {
+      ...oldData,
+      ...newData
+    };
+    
+    return result;
+  }
+  
+  const levels = [window.__COMMUNITY_PICK__, ...(window.__DAILY_LEVELS__ ? window.__DAILY_LEVELS__ : []), ...(window.__WEEKLY_LEVELS__ ? window.__WEEKLY_LEVELS__ : [])];
+  for (const otherLevel of levels) {
+    
+    level = mergeData(level, otherLevel);
+  }
 
   var windowHandle = window.open("about:blank", "_blank");
   var hasBonus =
