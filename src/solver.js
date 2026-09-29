@@ -570,10 +570,8 @@ export class PuzzleSolver {
 
     if (puzzle.type === "COSTLY_WALLS") score -= 6 * walls.length;
 
-    console.log(puzzle);
-    if(puzzle.optimalScore) {
-      
-      console.log("match: ", puzzle.optimalScore == score);
+    if (puzzle.optimalScore && puzzle.optimalScore !== score) {
+      throw new Error(`Score mismatch: expected ${puzzle.optimalScore}, got ${score}`);
     }
 
     return {
