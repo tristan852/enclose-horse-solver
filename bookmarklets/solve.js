@@ -11,9 +11,11 @@
   
     const result = {
       ...oldData,
-      ...newData
+      ...Object.fromEntries(
+        Object.entries(newData).filter(([_, value]) => value !== null)
+      )
     };
-    
+  
     return result;
   }
   
