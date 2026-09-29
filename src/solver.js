@@ -570,6 +570,11 @@ export class PuzzleSolver {
 
     if (puzzle.type === "COSTLY_WALLS") score -= 6 * walls.length;
 
+    console.log(puzzle);
+    if(puzzle.optimalScore) {
+      
+    }
+
     return {
       puzzle,
       score,
