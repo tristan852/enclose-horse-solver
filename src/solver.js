@@ -445,7 +445,7 @@ export class PuzzleSolver {
   
   async requestSolutions(limit) {
     const startedAt = performance.now();
-    const result = await puzzleSolver.solve(limit);
+    const result = await this.solve(limit);
     const elapsedMs = performance.now() - startedAt;
     const elapsed = `${elapsedMs.toFixed(1)} ms`;
   
