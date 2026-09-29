@@ -1018,6 +1018,7 @@ function initEditor() {
         { map: solverMap, budget: Number(budgetInput.value), bonusType: mode.value },
         true
       );
+      
       const solver = new PuzzleSolver(puzzle, staticModel);
       const result = await solver.requestSolutions(30);
 
@@ -1333,9 +1334,7 @@ function initEditor() {
   });
 
   board.addEventListener("pointerleave", () => {
-    if (!isPainting) {
-      clearHover();
-    }
+    clearHover();
   });
 
   document.querySelector(".toolbar").addEventListener("pointerdown", clearHover);
